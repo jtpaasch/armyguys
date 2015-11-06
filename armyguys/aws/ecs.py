@@ -221,7 +221,7 @@ def update_service(profile, service, cluster, task_definition=None,
     params["cluster"] = cluster
     if task_definition:
         params["taskDefinition"] = task_definition
-    if count:
+    if count or count == 0:
         params["desiredCount"] = count
     return client.update_service(**params)
 

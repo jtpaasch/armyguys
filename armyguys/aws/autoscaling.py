@@ -12,6 +12,7 @@ def create_launch_configuration(profile,
                                 security_groups=None,
                                 instance_type="t2.micro",
                                 public_ip=False,
+                                instance_profile=None,
                                 cluster=None):
     """Create a launch configuration.
 
@@ -40,6 +41,9 @@ def create_launch_configuration(profile,
         public_ip
             Give the EC2 instance a public IP?
 
+        instance_profile
+            The name of an IAM instance profile to give the EC2 instance.
+
         cluster
             The name of an ECS cluster to launch the EC2 instance into.
 
@@ -58,6 +62,8 @@ def create_launch_configuration(profile,
         params["SecurityGroups"] = security_groups
     if public_ip:
         params["AssociatePublicIpAddress"] = True
+    if instance_profile:
+        params["IamInstanceProfile"] = instance_profile
     if cluster:
         params["UserData"] = "#!/bin/bash\n" \
                              + "echo ECS_CLUSTER=" \
