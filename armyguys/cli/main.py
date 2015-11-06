@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-"""The ``cli`` module."""
+"""The ``main`` module for the ``cli`` package."""
 
 import click
 
