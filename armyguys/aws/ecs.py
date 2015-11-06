@@ -82,7 +82,7 @@ def delete_task_definition(profile, name):
             A profile to connect to AWS with.
 
         name
-            The full name, i.e., the family name + revision number.
+            The full name, i.e., family:revision.
 
     Returns:
         The JSON response returned by boto3.
@@ -106,7 +106,7 @@ def run_task(profile, cluster, task_definition):
             The name of the cluster to run the task in.
 
         task_definition
-            The full name of the task to run, i.e., family + revision number.
+            The full name of the task to run, i.e., family:revision.
 
     Returns:
         The JSON response returned by boto3.
@@ -160,7 +160,7 @@ def start_service(profile, name, cluster, task_definition,
             The name of the cluster to start the service in.
 
         task_definition
-            The full name of the task to run, i.e., family + revision number.
+            The full name of the task to run, i.e., family:revision.
 
         count
             The number of instances of the service to run in parallel.
@@ -204,7 +204,7 @@ def update_service(profile, service, cluster, task_definition=None,
             The name of the cluster the service is running in.
 
         task_definition
-            The full name of the task to run, i.e., family + revision number.
+            The full name of the task to run, i.e., family:revision.
             If None, no change is made to the task definition.
 
         count
