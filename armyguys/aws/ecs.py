@@ -217,7 +217,7 @@ def update_service(profile, service, cluster, task_definition=None,
     """
     client = boto3client.get("ecs", profile)
     params = {}
-    params["service"] = name
+    params["service"] = service
     params["cluster"] = cluster
     if task_definition:
         params["taskDefinition"] = task_definition
