@@ -61,7 +61,7 @@ def create_launch_configuration(profile,
     if cluster:
         params["UserData"] = "#!/bin/bash\n" \
                              + "echo ECS_CLUSTER=" \
-                             + name \
+                             + cluster \
                              + " >> /etc/ecs/ecs.config"
     return client.create_launch_configuration(**params)
 
