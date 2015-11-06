@@ -2,6 +2,7 @@
 
 """Utilities for working with ECS clusters."""
 
+import json
 from . import client as boto3client
 
 
