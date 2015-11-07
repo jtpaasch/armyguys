@@ -7,7 +7,7 @@ from . import client as boto3client
 
 def create_launch_configuration(profile,
                                 name,
-                                ami_id="ami-c16422a4",
+                                ami_id="ami-ddc7b6b7",
                                 key_pair=None,
                                 security_groups=None,
                                 instance_type="t2.micro",
