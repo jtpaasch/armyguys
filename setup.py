@@ -24,7 +24,7 @@ setup(
     version="0.0.0",
 
     # Describe the project.
-    description="A tool for working with AWS."
+    description="A tool for working with AWS.",
     long_description=long_description,
     keywords="cli AWS deployment",
 
