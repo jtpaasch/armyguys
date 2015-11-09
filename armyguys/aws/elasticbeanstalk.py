@@ -158,7 +158,7 @@ def delete_application_version(profile, application, version, delete_source_file
 
 
 def create_environment(profile, name, application, cname=None, version=None,
-                       tier="web", key_pair=None, instance_type="t1.micro",
+                       tier="web", key_pair=None, instance_type="t2.micro",
                        instance_profile=None, service_role=None,
                        healthcheck_url=None, security_groups=None):
     """Create a multi-container Docker Elastic Beanstalk environment.
@@ -219,7 +219,6 @@ def create_environment(profile, name, application, cname=None, version=None,
         instance_type
             The type of EC2 instance to launch, when EC2 instances get
             launched (the launching is handled automatically by Amazon).
-            The default is "t1.micro", as Amazon doesn't allow t2.micro.
 
         instance_profile
             The name of an IAM Instance Profile.
