@@ -9,7 +9,7 @@ def create_launch_configuration(profile,
                                 name,
                                 ami_id="ami-ddc7b6b7",
                                 key_pair=None,
-                                security_groups=None,
+                                security_groups=["sg-be4db7d8"],
                                 instance_type="t2.micro",
                                 public_ip=False,
                                 instance_profile=None,
@@ -34,6 +34,7 @@ def create_launch_configuration(profile,
 
         security_groups
             A list of security group IDs.
+            TO DO: Get/create this programatically?
 
         instance_type
             The type of EC2 instance to launch.
@@ -99,7 +100,12 @@ def create_autoscaling_group(profile,
                              min_size=1,
                              max_size=1,
                              desired_size=1,
-                             subnets=["subnet-24e33419"]):
+                             subnets=[
+                                 "subnet-a1e1f9d6",
+                                 "subnet-33d2e06a",
+                                 "subnet-f6e9cadd",
+                                 "subnet-24e33419"]
+                             ):
     """Create an autoscaling group.
 
     Args:

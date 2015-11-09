@@ -145,7 +145,7 @@ def stop_task(profile, cluster, task_id):
 
 
 def start_service(profile, name, cluster, task_definition,
-                  count=1, load_balancer=None, role=None):
+                  count=1, load_balancers=None, role=None):
     """Create a service in a cluster.
 
     Args:
@@ -165,8 +165,8 @@ def start_service(profile, name, cluster, task_definition,
         count
             The number of instances of the service to run in parallel.
 
-        load_balancer
-            The name of a load balancer to attach to the service.
+        load_balancers
+            A list of load balancer dicts.
 
         role
             A role to give the service.
@@ -181,8 +181,8 @@ def start_service(profile, name, cluster, task_definition,
     params["taskDefinition"] = task_definition
     params["cluster"] = cluster
     params["desiredCount"] = count
-    if load_balancer:
-        params["loadBalancers"] = [load_balancer]
+    if load_balancers:
+        params["loadBalancers"] = load_balancers
     if role:
         params["role"] = role
     return client.create_service(**params)

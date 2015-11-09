@@ -305,7 +305,7 @@ def create_environment(profile, name, application, cname=None, version=None,
     if security_groups:
         security_groups_option = {
             "Namespace": "aws:autoscaling:launchconfiguration",
-            "OptionName": "SecurityGroups",
+            "OptionName": "SecurityGroupIds",
             "Value": security_groups,
         }
         options.append(security_groups_option)
