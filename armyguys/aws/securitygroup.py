@@ -71,12 +71,12 @@ def get(profile):
     return client.describe_security_groups()
 
 
-def create_inbound_rule(profile,
-                        security_group,
-                        protocol,
-                        from_port,
-                        to_port,
-                        cidr_block):
+def add_inbound_rule(profile,
+                     security_group,
+                     protocol,
+                     from_port,
+                     to_port,
+                     cidr_block):
     """Create a rule for inbound traffic in a security group.
 
     Args:
@@ -116,7 +116,7 @@ def create_inbound_rule(profile,
     return client.authorize_security_group_ingress(**params)
 
 
-def delete_inbound_rule(profile,
+def remove_inbound_rule(profile,
                         security_group,
                         protocol,
                         from_port,
@@ -160,12 +160,12 @@ def delete_inbound_rule(profile,
     return client.revoke_security_group_ingress(**params)
 
 
-def create_outbound_rule(profile,
-                         security_group,
-                         protocol,
-                         from_port,
-                         to_port,
-                         cidr_block):
+def add_outbound_rule(profile,
+                      security_group,
+                      protocol,
+                      from_port,
+                      to_port,
+                      cidr_block):
     """Create a rule for outbound traffic in a security group.
 
     Args:
@@ -205,7 +205,7 @@ def create_outbound_rule(profile,
     return client.authorize_security_group_egress(**params)
 
 
-def delete_outbound_rule(profile,
+def remove_outbound_rule(profile,
                          security_group,
                          protocol,
                          from_port,
