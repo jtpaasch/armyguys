@@ -9,9 +9,9 @@ def create_launch_configuration(profile,
                                 name,
                                 ami_id="ami-ddc7b6b7",
                                 key_pair=None,
-                                security_groups=["sg-be4db7d8"],
+                                security_groups=None,
                                 instance_type="t2.micro",
-                                public_ip=False,
+                                public_ip=True,
                                 instance_profile=None,
                                 cluster=None):
     """Create a launch configuration.
@@ -34,13 +34,13 @@ def create_launch_configuration(profile,
 
         security_groups
             A list of security group IDs.
-            TO DO: Get/create this programatically?
 
         instance_type
             The type of EC2 instance to launch.
 
         public_ip
-            Give the EC2 instance a public IP?
+            Give the EC2 instance a public IP? Defaults to ``True``
+            because ECS clusters won't work without that.
 
         instance_profile
             The name of an IAM instance profile to give the EC2 instance.
@@ -97,15 +97,10 @@ def delete_launch_configuration(profile, name):
 def create_autoscaling_group(profile,
                              name,
                              launch_configuration,
+                             subnets,
                              min_size=1,
                              max_size=1,
-                             desired_size=1,
-                             subnets=[
-                                 "subnet-a1e1f9d6",
-                                 "subnet-33d2e06a",
-                                 "subnet-f6e9cadd",
-                                 "subnet-24e33419"]
-                             ):
+                             desired_size=1):
     """Create an autoscaling group.
 
     Args:
@@ -119,6 +114,9 @@ def create_autoscaling_group(profile,
         launch_configuration
             The name of the launch configuration to use.
 
+        subnets
+            A list of subnets to launch into.
+
         min_size
             The min number of EC2 instances to keep in the group.
 
@@ -127,10 +125,6 @@ def create_autoscaling_group(profile,
 
         desired_size
             The ideal number of EC2 instances to keep in the group.
-
-        subnets
-            A list of subnets to launch into.
-            TO DO: Get these programmatically?
 
     Returns:
         The JSON response returned by boto3.
@@ -143,8 +137,7 @@ def create_autoscaling_group(profile,
     params["MinSize"] = min_size
     params["MaxSize"] = max_size
     params["DesiredCapacity"] = desired_size
-    if subnets:
-        params["VPCZoneIdentifier"] = ",".join(subnets)
+    params["VPCZoneIdentifier"] = ",".join(subnets)
     return client.create_auto_scaling_group(**params)
 
 
