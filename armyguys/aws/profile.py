@@ -7,9 +7,13 @@ Every boto3 request requires credentials and a region.
 
 """
 
-import configparser
 from os import path
 from boto3.session import Session
+
+try:
+    import configparser
+except ImportError:
+    import ConfigParser as configparser
 
 
 def ephemeral(access_key_id, secret_access_key, region_name="us-east-1"):

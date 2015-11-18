@@ -2,6 +2,7 @@
 
 """Utilities for working with IAM policies."""
 
+import json
 from os import path
 from . import client as boto3client
 
@@ -18,7 +19,7 @@ def create(profile, name, contents=None, filepath=None):
             A name to give to the policy.
 
         contents
-            The contents of the policy (as a string).
+            The contents of the policy (as a Python dict or list).
             You must specify this OR a filepath.
 
         filepath
@@ -35,7 +36,7 @@ def create(profile, name, contents=None, filepath=None):
         with open(norm_path, "rb") as f:
             data = f.read().decode("utf-8")
     elif contents:
-        data = contents
+        data = json.dumps(contents)
     client = boto3client.get("iam", profile)
     params = {}
     params["PolicyName"] = name

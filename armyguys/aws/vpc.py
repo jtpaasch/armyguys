@@ -61,6 +61,34 @@ def get(profile):
     return client.describe_vpcs()
 
 
+def tag(profile, vpc, key, value):
+    """Add a tag to a VPC.
+
+    Args:
+
+        profile
+            A profile to connect to AWS with.
+
+        vpc
+            The ID of the VPC you want to tag.
+
+        key
+            The key/name of the tag.
+
+        value
+            The value of the tag.
+
+    Returns:
+        The JSON response returned by boto3.
+
+    """
+    client = boto3client.get("ec2", profile)
+    params = {}
+    params["Resources"] = [vpc]
+    params["Tags"] = [{"Key": key, "Value": value}]
+    return client.create_tags(**params)
+
+
 def attach_internet_gateway(profile, vpc, gateway):
     """Attach an internet gateway to a VPC.
 

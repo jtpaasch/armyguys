@@ -13,7 +13,7 @@ def create_launch_configuration(profile,
                                 instance_type="t2.micro",
                                 public_ip=True,
                                 instance_profile=None,
-                                cluster=None):
+                                user_data=None):
     """Create a launch configuration.
 
     Args:
@@ -45,8 +45,8 @@ def create_launch_configuration(profile,
         instance_profile
             The name of an IAM instance profile to give the EC2 instance.
 
-        cluster
-            The name of an ECS cluster to launch the EC2 instance into.
+        user_data
+            User data to add to the EC2 instance.
 
     Returns:
         The JSON response returned by boto3.
@@ -65,11 +65,8 @@ def create_launch_configuration(profile,
         params["AssociatePublicIpAddress"] = True
     if instance_profile:
         params["IamInstanceProfile"] = instance_profile
-    if cluster:
-        params["UserData"] = "#!/bin/bash\n" \
-                             + "echo ECS_CLUSTER=" \
-                             + cluster \
-                             + " >> /etc/ecs/ecs.config"
+    if user_data:
+        params["UserData"] = user_data
     return client.create_launch_configuration(**params)
 
 
@@ -97,7 +94,8 @@ def delete_launch_configuration(profile, name):
 def create_autoscaling_group(profile,
                              name,
                              launch_configuration,
-                             subnets,
+                             subnets=None,
+                             availability_zones=None,
                              min_size=1,
                              max_size=1,
                              desired_size=1):
@@ -115,7 +113,14 @@ def create_autoscaling_group(profile,
             The name of the launch configuration to use.
 
         subnets
-            A list of subnets to launch into.
+            A list of subnets to launch into. If you want to launch
+            your cluster into a VPC, you should fill in this value
+            and leave the ``availability_zones`` parameter blank.
+
+        availability_zones
+            A list of availability zones to launch into. If you do not
+            want to launch your cluster into a VPC, you should fill in
+            this value and leave the ``subnets`` parameter blank.
 
         min_size
             The min number of EC2 instances to keep in the group.
@@ -137,7 +142,10 @@ def create_autoscaling_group(profile,
     params["MinSize"] = min_size
     params["MaxSize"] = max_size
     params["DesiredCapacity"] = desired_size
-    params["VPCZoneIdentifier"] = ",".join(subnets)
+    if subnets:
+        params["VPCZoneIdentifier"] = ",".join(subnets)
+    if availability_zones:
+        params["AvailabilityZones"] = availability_zones
     return client.create_auto_scaling_group(**params)
 
 

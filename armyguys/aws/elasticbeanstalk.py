@@ -158,9 +158,9 @@ def delete_application_version(profile, application, version, delete_source_file
 
 
 def create_environment(profile, name, application, cname=None, version=None,
-                       tier="web", key_pair=None, instance_type="t2.micro",
+                       tier="web", key_pair=None, instance_type="t1.micro",
                        instance_profile=None, service_role=None,
-                       healthcheck_url=None):
+                       healthcheck_url=None, security_groups=None):
     """Create a multi-container Docker Elastic Beanstalk environment.
 
     Note: 
@@ -231,6 +231,11 @@ def create_environment(profile, name, application, cname=None, version=None,
         healthcheck_url
             A URL to do health checks against.
 
+        security_groups
+            A list of security group names for the environment. Elastic
+            Beanstalk will still create its own security group in addition
+            to whatever you provide here.
+
     Returns:
         The JSON response returned by boto3.
 
@@ -297,6 +302,13 @@ def create_environment(profile, name, application, cname=None, version=None,
             "Value": healthcheck_url,
         }
         options.append(healthcheck_url_option)
+    if security_groups:
+        security_groups_option = {
+            "Namespace": "aws:autoscaling:launchconfiguration",
+            "OptionName": "SecurityGroups",
+            "Value": ",".join(security_groups)
+        }
+        options.append(security_groups_option)
     if options:
         params["OptionSettings"] = options
     return client.create_environment(**params)
