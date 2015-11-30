@@ -55,7 +55,7 @@ def delete(profile, group_id):
     return client.delete_security_group(**params)
 
 
-def get(profile):
+def get(profile, security_group):
     """Get a list of security groups.
 
     Args:
@@ -63,12 +63,50 @@ def get(profile):
         profile
             A profile to connect to AWS with.
 
+        security_group
+            The name of a security group to get.
+            If this is omitted, all security groups are returned.
+
     Returns:
         The JSON response returned by boto3.
 
     """
     client = boto3client.get("ec2", profile)
-    return client.describe_security_groups()
+    params = {}
+    if security_group:
+        params["Filters"] = [{
+            "Name": "group-name",
+            "Values": [security_group],
+        }]
+    return client.describe_security_groups(**params)
+
+
+def tag(profile, security_group, key, value):
+    """Add a tag to a security group.
+
+    Args:
+
+        profile
+            A profile to connect to AWS with.
+
+        security_group
+            The ID of the security group you want to tag.
+
+        key
+            The key/name of the tag.
+
+        value
+            The value of the tag.
+
+    Returns:
+        The JSON response returned by boto3.
+
+    """
+    client = boto3client.get("ec2", profile)
+    params = {}
+    params["Resources"] = [security_group]
+    params["Tags"] = [{"Key": key, "Value": value}]
+    return client.create_tags(**params)
 
 
 def add_inbound_rule(profile,

@@ -2,165 +2,19 @@
 
 """Utilities for working with Amazon's Elastic Beanstalk."""
 
-from . import client as boto3client
+from .. import client as boto3client
+
+from . import utils
 
 
-def get_solution_stacks(profile):
-    """Get a list of all available solution stacks.
-
-    Args:
-
-        profile
-            A profile to connect to AWS with.
-
-    Returns:
-        The JSON response returned by boto3.
-
-    """
-    client = boto3client.get("elasticbeanstalk", profile)
-    return client.list_available_solution_stacks()
-
-
-def get_multicontainer_docker_solution_stack(profile):
-    """Get the multi-container Docker solution stack.
-
-    This calls ``get_solution_stacks()``, and then steps through the list
-    until it finds the multi-container Docker 1.7.1 one.
-
-    Note:
-        This method needs to be checked/updated somehow. If Amazon suddenly
-        changes their stack to, say, Docker 1.7.2, this method won't work
-        anymore, because it's looking for 1.7.1 exactly.
-
-    Args:
-
-        profile
-            A profile to connect to AWS with.
-
-    Returns:
-        The JSON data for the multi-container Docker 1.7.1 solution stack.
-
-    """
-    response = get_solution_stacks(profile)
-    stacks = response.get("SolutionStacks")
-    match = "Multi-container Docker 1.7.1"
-    items_with_match = (x for x in stacks if match in x)
-    return next(items_with_match, None)
-
-
-def create_application(profile, name):
-    """Create an Elastic Beanstalk application.
-
-    Args:
-
-        profile
-            A profile to connect to AWS with.
-
-        name
-            The name to give the application.
-
-    Returns:
-        The JSON response returned by boto3.
-
-    """
-    client = boto3client.get("elasticbeanstalk", profile)
-    params = {}
-    params["ApplicationName"] = name
-    return client.create_application(**params)
-
-
-def delete_application(profile, name, force=True):
-    """Delete an Elastic Beanstalk application.
-
-    Args:
-
-        profile
-            A profile to connect to AWS with.
-
-        name
-            The name of the application to delete.
-
-        force
-            Terminate the environment too?
-
-    """
-    client = boto3client.get("elasticbeanstalk", profile)
-    params = {}
-    params["ApplicationName"] = name
-    params["TerminateEnvByForce"] = force
-    return client.delete_application(**params)
-
-
-def create_application_version(profile, application, version, s3bucket, s3key):
-    """Create a new version of an application.
-
-    Args:
-
-        profile
-            A profile to connect to AWS with.
-
-        application
-            The name of the application to create a version for.
-
-        version
-            The name/label of the version, e.g., "v1.0" or "1.0.0".
-
-        s3bucket
-            The name of the S3 bucket with a Dockerrun.aws.json file.
-
-        s3key
-            The name of the Dockerrun.aws.json file.
-            TO DO: Is the name redundant? Will it always be Dockerrun.aws.json,
-            or can we version it?
-
-    Returns:
-        The JSON response returned by boto3.
-
-    """
-    client = boto3client.get("elasticbeanstalk", profile)
-    params = {}
-    params["ApplicationName"] = application
-    params["VersionLabel"] = version
-    params["SourceBundle"] = {
-        "S3Bucket": s3bucket,
-        "S3Key": s3key,
-        }
-    return client.create_application_version(**params)
-
-
-def delete_application_version(profile, application, version, delete_source_file=True):
-    """Delete an application version.
-
-    Args:
-
-        profile
-            A profile to connect to AWS with.
-
-        application
-            The name of the application to delete the version for.
-
-        version
-            The name/label of the version to delete, e.g., "v1.0" or "1.0.0".
-
-        delete_source_file
-            Delete the source file from S3?
-
-    Returns:
-        The JSON response returned by boto3.
-
-    """
-    client = boto3client.get("elasticbeanstalk", profile)
-    params = {}
-    params["ApplicationName"] = application
-    params["VersionLabel"] = version
-    params["DeleteSourceBundle"] = delete_source_file
-    return client.delete_application_version(**params)
-
-
-def create_environment(profile, name, application, cname=None, version=None,
-                       tier="web", key_pair=None, instance_type="t1.micro",
-                       instance_profile=None, service_role=None,
-                       healthcheck_url=None, security_groups=None):
+def create(profile, name, application, cname=None, version=None,
+           tier="web", key_pair=None, instance_type="t1.micro",
+           instance_profile=None, service_role=None,
+           healthcheck_url=None, security_groups=None,
+           max_instances=1, min_instances=1, tags=None,
+           vpc_id=None, subnets=None, db_subnets=None,
+           elb_subnets=None, elb_scheme=None,
+           public_ip=None):
     """Create a multi-container Docker Elastic Beanstalk environment.
 
     Note: 
@@ -222,11 +76,10 @@ def create_environment(profile, name, application, cname=None, version=None,
 
         instance_profile
             The name of an IAM Instance Profile.
-            TO DO: We need to automate the creation of this profile.
+            You MUST have an instance profile if you're using ECS.
 
         service_role
             The name of a service role.
-            TO DO: We need to automate the creation of this role.
 
         healthcheck_url
             A URL to do health checks against.
@@ -236,6 +89,39 @@ def create_environment(profile, name, application, cname=None, version=None,
             Beanstalk will still create its own security group in addition
             to whatever you provide here.
 
+        max_instances
+            The maximum number of EC2 instances to scale to.
+
+        min_instances
+            The minimum number of EC2 instances to scale to.
+
+        tags
+            A list of {"Key": <key>, "Value": <value>} dicts to add to
+            resources in the environment.
+
+        vpc_id
+            The ID of the VPC you want to launch the environment into.
+            If you specify a VPC, you must fill in the ``subnets`` parameter.
+
+        subnets
+            A list of VPC subnets you want to launch the environment into.
+            If you specify a ``vpc_id`` parameter, you must specify these too.
+
+        db_subnets
+            A list of DB subnets. Only applicable inside a VPC.
+
+        elb_subnets
+            A list of Elastic Load Balancer subnets. Only applicable
+            inside a VPC.
+
+        elb_scheme
+            Set to ``internal`` if you want an internal load balancer.
+            Otherwise, leave it blank for a public load balancer.
+            Only applicable inside a VPC.
+
+         public_ip
+            Assign public IP addresses to the EC2 instances?
+
     Returns:
         The JSON response returned by boto3.
 
@@ -244,12 +130,11 @@ def create_environment(profile, name, application, cname=None, version=None,
     params = {}
     params["ApplicationName"] = application
     params["EnvironmentName"] = name
-    if not cname:
-        cname = application
-    params["CNAMEPrefix"] = cname
+    if cname:
+        params["CNAMEPrefix"] = cname
     if version:
         params["VersionLabel"] = version
-    stack = get_multicontainer_docker_solution_stack(profile)
+    stack = utils.get_multicontainer_docker_solution_stack(profile)
     params["SolutionStackName"] = stack        
     if tier == "web":
         tier_definition = {
@@ -266,6 +151,8 @@ def create_environment(profile, name, application, cname=None, version=None,
     else:
         raise Exception("tier must be 'web' or 'worker'")
     params["Tier"] = tier_definition
+    if tags:
+        params["Tags"] = tags
     options = []
     if key_pair:
         key_pair_option = {
@@ -306,15 +193,71 @@ def create_environment(profile, name, application, cname=None, version=None,
         security_groups_option = {
             "Namespace": "aws:autoscaling:launchconfiguration",
             "OptionName": "SecurityGroups",
-            "Value": ",".join(security_groups)
+            "Value": ",".join(security_groups),
         }
         options.append(security_groups_option)
+    if min_instances:
+        min_instances_option = {
+            "Namespace": "aws:autoscaling:asg",
+            "OptionName": "MinSize",
+            "Value": str(min_instances),
+        }
+        options.append(min_instances_option)
+    if max_instances:
+        max_instances_option = {
+            "Namespace": "aws:autoscaling:asg",
+            "OptionName": "MaxSize",
+            "Value": str(max_instances),
+        }
+        options.append(max_instances_option)
+    if vpc_id:
+        vpc_id_option = {
+            "Namespace": "aws:ec2:vpc",
+            "OptionName": "VPCId",
+            "Value": vpc_id,
+        }
+        options.append(vpc_id_option)
+    if subnets:
+        subnets_option = {
+            "Namespace": "aws:ec2:vpc",
+            "OptionName": "Subnets",
+            "Value": ",".join(subnets),
+        }
+        options.append(subnets_option)
+    if db_subnets:
+        db_subnets_option = {
+            "Namespace": "aws:ec2:vpc",
+            "OptionName": "DBSubnets",
+            "Value": ",".join(db_subnets),
+        }
+        options.append(db_subnets_option)
+    if elb_subnets:
+        elb_subnets_option = {
+            "Namespace": "aws:ec2:vpc",
+            "OptionName": "ELBSubnets",
+            "Value": ",".join(elb_subnets),
+        }
+        options.append(elb_subnets_option)
+    if elb_scheme:
+        elb_scheme_option = {
+            "Namespace": "aws:ec2:vpc",
+            "OptionName": "ELBScheme",
+            "Value": elb_scheme,
+        }
+        options.append(elb_scheme_option)
+    if public_ip:
+        public_ip_option = {
+            "Namespace": "aws:ec2:vpc",
+            "OptionName": "AssociatePublicIpAddress",
+            "Value": str(public_ip),
+        }
+        options.append(public_ip_option)
     if options:
         params["OptionSettings"] = options
     return client.create_environment(**params)
 
 
-def delete_environment(profile, name, force=True):
+def delete(profile, environment, force=True):
     """Delete an Elastic Beanstalk environment.
 
     Args:
@@ -322,7 +265,7 @@ def delete_environment(profile, name, force=True):
         profile
             A profile to connect to AWS with.
 
-        name
+        environment
             The name of the environment to delete.
 
         force
@@ -334,6 +277,6 @@ def delete_environment(profile, name, force=True):
     """
     client = boto3client.get("elasticbeanstalk", profile)
     params = {}
-    params["EnvironmentName"] = name
+    params["EnvironmentName"] = environment
     params["TerminateResources"] = force
     return client.terminate_environment(**params)
