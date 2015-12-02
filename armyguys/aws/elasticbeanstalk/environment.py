@@ -280,3 +280,25 @@ def delete(profile, environment, force=True):
     params["EnvironmentName"] = environment
     params["TerminateResources"] = force
     return client.terminate_environment(**params)
+
+
+def swap_cnames(profile, source_environment, destination_environment):
+    """Swap the CNAMES for environments.
+
+    Args:
+
+        profile
+            A profile to connect to AWS with.
+
+        source_environment
+            The name of the source environment.
+
+        destination_environment
+            The name of the destination environment.
+
+    """
+    client = boto3client.get("elasticbeanstalk", profile)
+    params = {}
+    params["SourceEnvironmentName"] = source_environment
+    params["DestinationEnvironmentName"] = destination_environment
+    return client.swap_environment_cnames(**params)
