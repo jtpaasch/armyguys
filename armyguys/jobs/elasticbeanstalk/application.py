@@ -2,10 +2,10 @@
 
 """For creating and managing ECS task definitions."""
 
-from polarexpress.aws.elasticbeanstalk import application
-from polarexpress.aws import profile
+from ...aws.elasticbeanstalk import application
+from ...aws import profile
 
-from polarexpress.tasks import utils
+from ...jobs import utils
 
 
 

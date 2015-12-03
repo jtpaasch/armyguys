@@ -4,12 +4,12 @@
 
 import os
 
-from polarexpress.aws import instanceprofile
-from polarexpress.aws import policy
-from polarexpress.aws import profile
-from polarexpress.aws import role
+from ...aws import instanceprofile
+from ...aws import policy
+from ...aws import profile
+from ...aws import role
 
-from polarexpress.tasks import utils
+from ...tasks import utils
 
 
 def create_instance_profile(

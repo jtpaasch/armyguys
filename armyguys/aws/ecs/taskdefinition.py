@@ -3,6 +3,7 @@
 """Utilities for working with ECS task definitions."""
 
 import json
+import os
 from .. import client as boto3client
 
 
@@ -29,8 +30,8 @@ def create(profile, contents=None, filepath=None):
     if contents:
         data = contents
     elif filepath:
-        norm_path = path.normpath(filepath)
-        normpath = norm_path.rstrip(path.sep)
+        norm_path = os.path.normpath(filepath)
+        normpath = norm_path.rstrip(os.path.sep)
         with open(filepath) as f:
             data = json.load(f)
     client = boto3client.get("ecs", profile)

@@ -2,9 +2,9 @@
 
 """Utilities for working with Amazon's ECS."""
 
-from polarexpress.aws.ecs import (
-    cluster,
-    service,
-    task,
-    taskdefinition
-    )
+from . import cluster
+from . import containerinstance
+from . import task
+from . import taskdefinition
+from . import service
+

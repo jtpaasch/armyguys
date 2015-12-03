@@ -74,6 +74,7 @@ def get(profile, cluster, task=None):
         The data returned by boto3.
 
     """
+    result = None
     client = boto3client.get("ecs", profile)
     if task:
         task_arns = [task]
@@ -84,5 +85,7 @@ def get(profile, cluster, task=None):
         task_arns = tasks["taskArns"]
     params = {}
     params["cluster"] = cluster
-    params["tasks"] = task_arns
-    return client.describe_tasks(**params)
+    if task_arns:
+        params["tasks"] = task_arns
+        result = client.describe_tasks(**params)
+    return result

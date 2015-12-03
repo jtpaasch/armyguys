@@ -2,11 +2,10 @@
 
 """For creating and managing ECS task definitions."""
 
-from polarexpress.aws.elasticbeanstalk import environment
-from polarexpress.aws import profile
+from ...aws.elasticbeanstalk import environment
+from ...aws import profile
 
-from polarexpress.tasks import utils
-
+from ...jobs import utils
 
 
 def create_environment(

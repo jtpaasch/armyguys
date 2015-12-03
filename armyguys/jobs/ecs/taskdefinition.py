@@ -2,10 +2,10 @@
 
 """For creating and managing ECS task definitions."""
 
-from polarexpress.aws.ecs import taskdefinition
-from polarexpress.aws import profile
+from ...aws.ecs import taskdefinition
+from ...aws import profile
 
-from polarexpress.tasks import utils
+from ...jobs import utils
 
 
 def create_task_definition(

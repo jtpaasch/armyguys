@@ -12,7 +12,7 @@ def create(
         key_pair=None,
         security_groups=None,
         instance_type="t2.micro",
-        public_ip=True,
+        public_ip=None,
         instance_profile=None,
         user_data=None):
     """Create a launch configuration.
@@ -40,8 +40,7 @@ def create(
             The type of EC2 instance to launch.
 
         public_ip
-            Give the EC2 instance a public IP? Defaults to ``True``
-            because ECS clusters won't work without that.
+            Give the EC2 instance a public IP? 
 
         instance_profile
             The name of an IAM instance profile to give the EC2 instance.

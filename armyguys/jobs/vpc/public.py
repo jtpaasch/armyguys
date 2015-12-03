@@ -2,15 +2,15 @@
 
 """For creating and managing VPCs."""
 
-from polarexpress.aws import availabilityzone
-from polarexpress.aws import internetgateway
-from polarexpress.aws import profile
-from polarexpress.aws import routetable
-from polarexpress.aws import securitygroup
-from polarexpress.aws import subnet
-from polarexpress.aws import vpc
+from ...aws import availabilityzone
+from ...aws import internetgateway
+from ...aws import profile
+from ...aws import routetable
+from ...aws import securitygroup
+from ...aws import subnet
+from ...aws import vpc
 
-from polarexpress.tasks import utils
+from ...jobs import utils
 
 
 def create_vpc(
@@ -153,4 +153,3 @@ def create_vpc(
 if __name__ == "__main__":
     aws_profile = profile.configured()
     create_vpc(aws_profile, "joe-vpc", "10.0.0.0/16", subnet_cidr_blocks={"us-east-1a": "10.0.1.0/24", "us-east-1b": "10.0.2.0/24"}, security_group_cidr_block="0.0.0.0/0")
-

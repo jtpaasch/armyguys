@@ -4,10 +4,10 @@
 
 from botocore.exceptions import ClientError
 
-from polarexpress.aws import ecs
-from polarexpress.aws import profile
+from ...aws import ecs
+from ...aws import profile
 
-from polarexpress.tasks import utils
+from ...jobs import utils
 
 
 def get_service_info(aws_profile, cluster, service_name):

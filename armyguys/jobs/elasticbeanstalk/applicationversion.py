@@ -2,11 +2,11 @@
 
 """For creating and managing ECS task definitions."""
 
-from polarexpress.aws.elasticbeanstalk import applicationversion
-from polarexpress.aws import profile
-from polarexpress.aws import s3
+from ...aws.elasticbeanstalk import applicationversion
+from ...aws import profile
+from ...aws import s3
 
-from polarexpress.tasks import utils
+from ...jobs import utils
 
 
 def create_application_version(

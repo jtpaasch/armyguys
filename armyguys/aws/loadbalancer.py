@@ -120,7 +120,10 @@ def get(profile, load_balancer=None):
 
     """
     client = boto3client.get("elb", profile)
-    return client.describe_load_balancers()
+    params = {}
+    if load_balancer:
+        params["LoadBalancerNames"] = [load_balancer]
+    return client.describe_load_balancers(**params)
 
 
 def tag(profile, load_balancer, key, value):

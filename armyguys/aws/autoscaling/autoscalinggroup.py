@@ -146,3 +146,55 @@ def tag(profile, autoscaling_group, key, value):
     params = {}
     params["Tags"] = [tag]
     return client.create_or_update_tags(**params)
+
+
+def attach_load_balancer(profile, autoscaling_group, load_balancer):
+    """Attach a load balancer to an autoscaling group.
+
+    Args:
+
+        profile
+            A profile to connect to AWS with.
+
+        autoscaling_group
+            The name of the autoscaling group you want to
+            attach the load balancer to.
+
+        load_balancer
+            The name of the load balancer you want to attach.
+
+    Returns:
+        The JSON response returned by boto3.
+
+    """
+    client = boto3client.get("autoscaling", profile)
+    params = {}
+    params["AutoScalingGroupName"] = autoscaling_group
+    params["LoadBalancerNames"] = [load_balancer]
+    return client.attach_load_balancers(**params)
+
+
+def detach_load_balancer(profile, autoscaling_group, load_balancer):
+    """Detach a load balancer from an autoscaling group.
+
+    Args:
+
+        profile
+            A profile to connect to AWS with.
+
+        autoscaling_group
+            The name of the autoscaling group you want to
+            detach the load balancer from.
+
+        load_balancer
+            The name of the load balancer you want to detach.
+
+    Returns:
+        The JSON response returned by boto3.
+
+    """
+    client = boto3client.get("autoscaling", profile)
+    params = {}
+    params["AutoScalingGroupName"] = autoscaling_group
+    params["LoadBalancerNames"] = [load_balancer]
+    return client.detach_load_balancers(**params)

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-"""Tools to help with running polarexpress.tasks."""
+"""Tools to help with running jobs."""
 
 import os
 import pprint

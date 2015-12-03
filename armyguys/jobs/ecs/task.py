@@ -3,15 +3,14 @@
 """For creating and managing ECS tasks."""
 
 from os import path
-from pprint import pprint
 
 from botocore.exceptions import ClientError
 
-from polarexpress.aws.ecs import task
-from polarexpress.aws.ecs import taskdefinition
-from polarexpress.aws import profile
+from ...aws.ecs import task
+from ...aws.ecs import taskdefinition
+from ...aws import profile
 
-from polarexpress.tasks import utils
+from ...jobs import utils
 
 
 def get_task_definition_info(aws_profile, task_definition):

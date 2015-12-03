@@ -2,7 +2,5 @@
 
 """Utilities for working with autoscaling groups."""
 
-from polarexpress.aws.autoscaling import (
-    autoscalinggroup,
-    launchconfiguration
-    )
+from . import autoscalinggroup
+from . import launchconfiguration

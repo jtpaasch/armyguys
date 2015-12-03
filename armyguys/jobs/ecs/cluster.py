@@ -4,19 +4,19 @@
 
 from base64 import b64encode
 
-from polarexpress.aws.autoscaling import autoscalinggroup
-from polarexpress.aws.autoscaling import launchconfiguration
-from polarexpress.aws.ecs import cluster
-from polarexpress.aws.ecs import containerinstance
-from polarexpress.aws.ecs import service
+from ...aws.autoscaling import autoscalinggroup
+from ...aws.autoscaling import launchconfiguration
+from ...aws.ecs import cluster
+from ...aws.ecs import containerinstance
+from ...aws.ecs import service
 
-from polarexpress.aws import ec2
-from polarexpress.aws import profile
-from polarexpress.aws import s3
-from polarexpress.aws import securitygroup
-from polarexpress.aws import subnet
+from ...aws import ec2
+from ...aws import profile
+from ...aws import s3
+from ...aws import securitygroup
+from ...aws import subnet
 
-from polarexpress.tasks import utils
+from ...jobs import utils
 
 
 ECS_CONFIG_FILE_ON_INSTANCE = "/etc/ecs/ecs.config"
@@ -745,8 +745,8 @@ if __name__ == "__main__":
     security_groups = None  # ["sg-dd5d23bb"]
 
     # Delete the cluster.
-    delete_cluster(aws_profile=aws_profile, cluster_name=cluster_name)
-    utils.exit()
+    # delete_cluster(aws_profile=aws_profile, cluster_name=cluster_name)
+    # utils.exit()
     
     # Params for dockerhub/ecs.config.
     region = aws_profile._session._profile_map[profile_name]["region"]
