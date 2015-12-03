@@ -572,25 +572,9 @@ def delete_cluster(aws_profile, cluster_name):
     else:
         msg = "No cluster '" + cluster_name + "'."
         utils.error(msg)
-    
-    # Get all container instances in the cluster.
-    utils.heading("Getting container instances")
-    instance_ids = []
-    if not has_cluster:
-        utils.error("No cluster found. Getting instances n/a.")
-    else:
-        container_instances = get_containerinstances_info(
-            aws_profile,
-            cluster_name)
-        if container_instances:
-            instance_ids = [x["ec2InstanceId"] for x in container_instances]
-            utils.emphasize("INSTANCE IDS:")
-            utils.echo_data(instance_ids)
-        else:
-            utils.echo("No container instances.")
 
     # Make sure the security group exists (before we try to delete it).
-    utils.heading("Checking that the security group exists.")
+    utils.heading("Checking that the security group exists")
     sg_info = get_securitygroup_info(aws_profile, securitygroup_name)
     if sg_info:
         utils.echo_data(sg_info)
@@ -603,7 +587,7 @@ def delete_cluster(aws_profile, cluster_name):
         utils.error(msg)
 
     # Make sure the launch config exists (before we try to delete it).
-    utils.heading("Checking that the launch config exists.")
+    utils.heading("Checking that the launch config exists")
     launchconfig_info = get_launchconfig_info(aws_profile, launchconfig_name)
     if launchconfig_info:
         utils.echo_data(launchconfig_info)
@@ -618,7 +602,7 @@ def delete_cluster(aws_profile, cluster_name):
     asg_info = get_autoscalinggroup_info(aws_profile, autoscalinggroup_name)
 
     # Make sure the auto scaling group exists (before we try to delete it).
-    utils.heading("Checking that the auto scaling group exists.")
+    utils.heading("Checking that the auto scaling group exists")
     if asg_info:
         utils.echo_data(asg_info)
         has_autoscaling_group = True
@@ -664,6 +648,17 @@ def delete_cluster(aws_profile, cluster_name):
             utils.error(msg)
             utils.exit()
 
+    # Get the EC2 instances in the auto scaling group.
+    utils.heading("Getting EC2 instances in the auto scaling group")
+    instance_ids = []
+    if asg_info:
+        instances = asg_info[0]["Instances"]
+        instance_ids = [x["InstanceId"] for x in instances]
+        utils.emphasize("INSTANCE IDS:")
+        utils.echo_data(instance_ids)
+    else:
+        utils.echo("No auto scaling group. Instances n/a.")
+            
     # Delete the autoscaling group.
     utils.heading("Deleting auto scaling group")
     if not has_autoscaling_group:
@@ -702,8 +697,6 @@ def delete_cluster(aws_profile, cluster_name):
     if not has_security_group:
         utils.error("No security group detected. Deleting n/a.")
     else:
-        # TO DO: Really you should wait for instances
-        # in the autoscaling group to be terminated.
         success = securitygroup.try_to_delete(
             profile=aws_profile,
             security_group=sg_id,
@@ -765,8 +758,8 @@ if __name__ == "__main__":
     user_data = 'echo "FOO" > /var/foo.txt'
 
     # Delete the cluster.
-    delete_cluster(aws_profile=aws_profile, cluster_name=cluster_name)
-    utils.exit()
+    # delete_cluster(aws_profile=aws_profile, cluster_name=cluster_name)
+    # utils.exit()
     
     # Params for dockerhub/ecs.config.
     region = aws_profile._session._profile_map[profile_name]["region"]
