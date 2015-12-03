@@ -3,6 +3,7 @@
 """Utilities for working with Elastic Load Balancers."""
 
 from os import path
+from botocore.exceptions import ClientError
 from . import client as boto3client
 
 
@@ -119,11 +120,18 @@ def get(profile, load_balancer=None):
         The JSON response returned by boto3.
 
     """
+    response = None
     client = boto3client.get("elb", profile)
     params = {}
     if load_balancer:
         params["LoadBalancerNames"] = [load_balancer]
-    return client.describe_load_balancers(**params)
+    try:
+        response = client.describe_load_balancers(**params)
+    except ClientError as error:
+        error_message = error.response["Error"]["Message"]
+        if not error_message.startswith("Cannot find Load Balancer"):
+            raise
+    return response
 
 
 def tag(profile, load_balancer, key, value):

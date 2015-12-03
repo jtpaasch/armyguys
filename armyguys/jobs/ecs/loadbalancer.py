@@ -50,7 +50,7 @@ def get_autoscalinggroup_info(aws_profile, autoscalinggroup_name):
     return result
 
 
-def get_loadbalancer_info(aws_profile, loadbalancer_name):
+def get_load_balancer_info(aws_profile, load_balancer):
     """Get info about a load balancer.
 
     Args:
@@ -58,19 +58,20 @@ def get_loadbalancer_info(aws_profile, loadbalancer_name):
         aws_profile
             A profile to connect to AWS with.
 
-        loadbalancer_name
+        load_balancer
             The name of the load balancer to fetch info about.
 
     Returns:
         The JSON response returned by boto3.
 
     """
-    response = loadbalancer.get(aws_profile, loadbalancer_name)
-    load_balancers = response["LoadBalancerDescriptions"]
     result = []
-    if load_balancers:
-        result = [x for x in load_balancers
-                  if x["LoadBalancerName"] == loadbalancer_name]
+    response = loadbalancer.get(aws_profile, load_balancer)
+    if response:
+        load_balancers = response["LoadBalancerDescriptions"]
+        if load_balancers:
+            result = [x for x in load_balancers
+                      if x["LoadBalancerName"] == load_balancer]
     return result
 
 
@@ -110,7 +111,7 @@ def attach_loadbalancer(
 
     # Make sure the load balancer exists.
     utils.heading("Checking that the load balancer exists")
-    response = get_loadbalancer_info(
+    response = get_load_balancer_info(
         aws_profile,
         load_balancer)
     if response:
