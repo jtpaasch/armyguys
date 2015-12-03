@@ -303,7 +303,8 @@ def create_cluster(
         vpc_id=None,
         availability_zones=None,
         security_groups=None,
-        ecs_config_file_in_s3=None):
+        ecs_config_file_in_s3=None,
+        user_data=None):
     """Create an ECS cluster.
 
     Args:
@@ -345,6 +346,9 @@ def create_cluster(
             the file and store it as /etc/ecs/ecs.config.
             This is the file the ECS agent reads when it starts up. Any
             ECS configuration should go in this file.
+
+        user_data
+            Any user data you want to run on the EC2 instance.
 
     """
     launchconfig_name = get_launchconfig_name(cluster_name)
@@ -412,13 +416,19 @@ def create_cluster(
 
     # Generate the user data.
     utils.heading("Generating user data field")
-    user_data = "#!/bin/bash\n" \
-                + "yum install -y aws-cli\n" \
-                + "aws s3 cp s3://" + str(ecs_config_file_in_s3) \
-                + " " \
-                + ECS_CONFIG_FILE_ON_INSTANCE \
-                + "\n\n"
-    utils.echo_data(user_data)
+    init_script = ""
+    if ecs_config_file_in_s3:
+        init_script += "yum install -y aws-cli\n" \
+                       + "aws s3 cp s3://" + str(ecs_config_file_in_s3) \
+                       + " " \
+                       + ECS_CONFIG_FILE_ON_INSTANCE \
+                       + "\n\n"
+    if user_data:
+        init_script += user_data + "\n\n"
+    if init_script:
+        init_script = "#!/bin/bash\n" \
+                      + init_script
+    utils.echo_data(init_script)
 
     # Create a security group for this cluster.
     utils.heading("Creating security group")
@@ -463,7 +473,8 @@ def create_cluster(
     params["name"] = launchconfig_name
     params["instance_profile"] = instance_profile_name
     params["instance_type"] = instance_type
-    params["user_data"] = user_data
+    if init_script:
+        params["user_data"] = init_script
     if key_pair:
         params["key_pair"] = key_pair
     if security_groups:
@@ -687,13 +698,21 @@ def delete_cluster(aws_profile, cluster_name):
 
     # Delete the security group.
     utils.heading("Deleting the security group")
+    utils.echo("Waiting for security group's dependencies to disappear...")
     if not has_security_group:
         utils.error("No security group detected. Deleting n/a.")
     else:
-        response = securitygroup.delete(
+        # TO DO: Really you should wait for instances
+        # in the autoscaling group to be terminated.
+        success = securitygroup.try_to_delete(
             profile=aws_profile,
-            group_id=sg_id)
-        utils.echo_data(response)
+            security_group=sg_id,
+            max_attempts=12,
+            wait_interval=10)
+        if success:
+            utils.echo("No security group '" + str(sg_id) + "'.")
+        else:
+            utils.error("Security group not deleted.")
 
     # Delete any services.
     utils.heading("Stopping services")
@@ -743,10 +762,11 @@ if __name__ == "__main__":
     vpc_id = "vpc-8c65bce8"  # None
     availability_zones = None  # ["us-east-1c", "us-east-1e"]
     security_groups = None  # ["sg-dd5d23bb"]
+    user_data = 'echo "FOO" > /var/foo.txt'
 
     # Delete the cluster.
-    # delete_cluster(aws_profile=aws_profile, cluster_name=cluster_name)
-    # utils.exit()
+    delete_cluster(aws_profile=aws_profile, cluster_name=cluster_name)
+    utils.exit()
     
     # Params for dockerhub/ecs.config.
     region = aws_profile._session._profile_map[profile_name]["region"]
@@ -780,4 +800,5 @@ if __name__ == "__main__":
         vpc_id=vpc_id,
         availability_zones=availability_zones,
         security_groups=security_groups,
-        ecs_config_file_in_s3=full_s3_address)
+        ecs_config_file_in_s3=full_s3_address,
+        user_data=user_data)

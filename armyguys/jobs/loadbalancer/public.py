@@ -4,8 +4,6 @@
 
 from time import sleep
 
-from botocore.exceptions import ClientError
-
 from ...aws import loadbalancer
 from ...aws import profile
 from ...aws import securitygroup
@@ -289,57 +287,16 @@ def delete_load_balancer(
     if not has_security_group:
         utils.echo("No security group found. Deleting n/a.")
     else:
-
-        # Set up some parameters for deleting the security group.
         params = {}
         params["profile"] = aws_profile
-        params["group_id"] = elb_security_group_id
-
-        # We need to poll AWS to find out when the security group's
-        # dependency on the load balancer disappears.
-        max_attempts = 10
-        wait_interval = 1
-        count = 0
-        is_okay = False
-        while True:
-            msg = "Waiting for dependency on load balancer to terminate..."
-            utils.echo(msg)
-            if count >= max_attempts:
-                break
-            else:
-
-                # Try to delete the group.
-                response = None
-                try:
-                    response = securitygroup.delete(**params)
-                except ClientError as error:
-                    utils.echo_data(error.response)
-                    error_code = error.response["Error"]["Code"]
-
-                    # If the group is gone, we've succeeded.
-                    if error_code == "InvalidGroup.NotFound":
-                        is_okay = True
-
-                    # We expect a dependency violation to show up until
-                    # AWS removes the dependency on the load balancer
-                    # (which can take a few seconds). If any other error
-                    # is raised, we want to raise it; it's unexpected.
-                    elif error_code != "DependencyViolation":
-                        raise
-
-                if response:
-                    utils.echo_data(response)
-                    is_okay = True
-            count += 1
-            if is_okay:
-                break
-            else:
-                sleep(wait_interval)
-        if not is_okay:
-            msg = "Wait timed out (waiting for load balancer to delete)."
-            utils.error(msg)
+        params["security_group"] = elb_security_group_id
+        params["max_attempts"] = 10
+        params["wait_interval"] = 1
+        success = securitygroup.try_to_delete(**params)
+        if success:
+            utils.echo("Security group gone.")
+        else:
             utils.error("Security group not deleted.")
-            utils.exit()
 
     # Exit nicely.
     utils.echo("")

@@ -3,6 +3,8 @@
 """Utilities for working with EC2 security groups."""
 
 from os import path
+from time import sleep
+from botocore.exceptions import ClientError
 from . import client as boto3client
 
 
@@ -285,3 +287,50 @@ def remove_outbound_rule(profile,
         "IpRanges": [{"CidrIp": cidr_block}],
         }]
     return client.revoke_security_group_egress(**params)
+
+
+def try_to_delete(profile, security_group, max_attempts=10, wait_interval=1):
+    """Try to delete a security group a number of times.
+
+    Args:
+
+        profile
+            A profile to connect to AWS with.
+
+        security_group
+            The ID of the security group to delete.
+
+        max_attempts
+            How many times should we try to delete the security group?
+
+        wait_interval
+            How many seconds should we wait between each attempt?
+
+    Returns:
+        Boolean indicating success.
+
+    """
+    client = boto3client.get("ec2", profile)
+    params = {}
+    params["GroupId"] = security_group
+    count = 0
+    is_okay = False
+    while True:
+        if count >= max_attempts:
+            break
+        else:
+            response = None
+            try:
+                response = client.delete_security_group(**params)
+            except ClientError as error:
+                error_code = error.response["Error"]["Code"]
+                if error_code == "InvalidGroup.NotFound":
+                    is_okay = True
+                elif error_code != "DependencyViolation":
+                    raise
+            count += 1
+            if is_okay:
+                break
+            else:
+                sleep(wait_interval)
+    return is_okay
