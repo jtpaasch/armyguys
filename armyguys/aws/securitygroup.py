@@ -57,7 +57,7 @@ def delete(profile, group_id):
     return client.delete_security_group(**params)
 
 
-def get(profile, security_group):
+def get(profile, security_group=None, filters=None):
     """Get a list of security groups.
 
     Args:
@@ -68,6 +68,9 @@ def get(profile, security_group):
         security_group
             The name of a security group to get.
             If this is omitted, all security groups are returned.
+
+        filters
+            Filters for the request.
 
     Returns:
         The JSON response returned by boto3.
@@ -80,6 +83,8 @@ def get(profile, security_group):
             "Name": "group-name",
             "Values": [security_group],
         }]
+    elif filters:
+        params["Filters"] = filters
     return client.describe_security_groups(**params)
 
 

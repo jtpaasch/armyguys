@@ -2,4 +2,5 @@
 
 """Load balancer jobs."""
 
+from . import create
 from . import fetch

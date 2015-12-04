@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
 
-"""VPC jobs."""
+"""Availability zone jobs."""
 
 from . import fetch

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
 
-"""VPC jobs."""
+"""Subnet jobs."""
 
 from . import fetch

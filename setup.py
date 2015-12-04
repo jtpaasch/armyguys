@@ -21,7 +21,7 @@ setup(
     name="armyguys",
 
     # Version should comply with PEP440.
-    version="0.0.0",
+    version="0.0.1dev1",
 
     # Describe the project.
     description="A tool for working with AWS.",
