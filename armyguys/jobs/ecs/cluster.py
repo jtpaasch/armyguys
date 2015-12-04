@@ -674,10 +674,17 @@ def delete_cluster(aws_profile, cluster_name):
     if instance_ids:
         utils.echo("Terminating:")
         utils.echo_data(instance_ids)
-        response = ec2.wait_for_instances_to_terminate(
-            profile=aws_profile,
-            instances=instance_ids)
-        utils.echo_data(response)
+        for instance_id in instance_ids:
+            is_gone = ec2.wait_until_gone(
+                profile=aws_profile,
+                instance=instance_id,
+                max_attempts=12,
+                wait_interval=10)
+            if is_gone:
+                utils.echo("Terminated: " + str(instance_id))
+            else:
+                utils.error("Failed to terminate: " + str(instance_id))
+                utils.exit()
     else:
         utils.error("No instances. Waiting n/a.")
 
@@ -758,8 +765,8 @@ if __name__ == "__main__":
     user_data = 'echo "FOO" > /var/foo.txt'
 
     # Delete the cluster.
-    # delete_cluster(aws_profile=aws_profile, cluster_name=cluster_name)
-    # utils.exit()
+    delete_cluster(aws_profile=aws_profile, cluster_name=cluster_name)
+    utils.exit()
     
     # Params for dockerhub/ecs.config.
     region = aws_profile._session._profile_map[profile_name]["region"]
