@@ -4,6 +4,8 @@
 
 from ...aws import availabilityzone
 
+ZONE_BLACKLIST = ["us-east-1a"]
+
 
 def get_all(profile):
     """Get all availability zones.
@@ -24,5 +26,5 @@ def get_all(profile):
     data = response.get("AvailabilityZones")
     result = None
     if len(data) > 0:
-        result = data
+        result = [x for x in data if x["ZoneName"] not in ZONE_BLACKLIST]
     return result
