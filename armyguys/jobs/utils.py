@@ -2,91 +2,98 @@
 
 """Tools to help with running jobs."""
 
-import os
-import pprint
-import sys
+from .exceptions import BadResponse
+from .exceptions import MissingDataInResponse
+from .exceptions import Non200Response
 
 
-HELP_OPTION = "--help"
-    
-TEXT_BOLD = '\033[01m'
-TEXT_REVERSE = '\033[07m'
-TEXT_DISABLE = '\033[02m'
-TEXT_UNDERLINE = '\033[04m'
-TEXT_STRIKETHROUGH = '\033[09m'
+def check_response_is_ok(
+        response,
+        reports=None,
+        aws_reporter=None,
+        job_error_reporter=None,
+        stdout_reporter=None):
+    """Check that an AWS response is okay.
 
-TEXT_OK = '\033[92m'
-TEXT_WARNING = '\033[93m'
-TEXT_FAIL = '\033[91m'
+    Args:
 
-TEXT_EMPHASIS = '\033[94m'
+        response
+            The data returned by AWS.
 
-TEXT_BG_OK = '\033[42m'
-TEXT_BG_WARNING = '\033[43m'
-TEXT_BG_FAIL = '\033[41m'
+        reports
+            A list of reports to send info to.
 
-TEXT_RESET = '\033[0m'
+        aws_reporter
+            The AWS response will be sent to this reporter.
 
+        job_error_reporter
+            Job errors will be sent to this reporter.
 
-def format_for_tty(text, formats):
-    """Format text for output to a TTY."""
-    pre = "".join(formats) if formats else ""
-    post = TEXT_RESET if formats else ""
-    return pre + text + post
+        stderr_reporter
+            Info meant for STDERR will be sent to this reporter.
 
-
-def echo(text, formats=None):
-    """Safely echo output to STDOUT."""
-    output = text
-    if sys.stdout.isatty():
-        output = format_for_tty(text, formats)
-    sys.stdout.write(output + os.linesep)
-
-
-def emphasize(text, formats=[]):
-    """Safely echo emphasized text to STDOUT."""
-    formats.append(TEXT_EMPHASIS)
-    echo(text, formats)
-
-
-def echo_data(data, formats=None):
-    """Safely echo pprinted data to STDOUT."""
-    output = pprint.pformat(data)
-    echo(output, formats)
+    """
+    if aws_reporter:
+        aws_reporter(reports, response)
+    try:
+        status_code = response["ResponseMetadata"]["HTTPStatusCode"]
+    except KeyError:
+        msg = "Could not find status code in response."
+        if job_error_reporter:
+            job_error_reporter(reports, msg)
+        if stderr_reporter:
+            stderr_reporter(reports, msg)
+        raise BadResponse(msg)
+    if status_code != 200:
+        msg = "Response code was not 200 OK."
+        if job_error_reporter:
+            job_error_reporter(reports, msg)
+        if stderr_reporter:
+            stderr_reporter(reports, msg)
+        raise Non200Response
 
 
-def error(text, formats=None):
-    """Safely echo error to STDERR, and exit with a status code."""
-    if not formats:
-        formats = [TEXT_FAIL]
-    output = text
-    if sys.stderr.isatty():
-        output = format_for_tty(text, formats)
-    sys.stderr.write(output + os.linesep)
+def get_data_in_response(
+        key,
+        response,
+        reports=None,
+        aws_reporter=None,
+        job_error_reporter=None,
+        stdout_reporter=None):
+    """Check that an AWS response is okay.
 
+    Args:
 
-def error_data(data, formats=None):
-    """Safely echo pprinted data to STDERR."""
-    if not formats:
-        formats = [TEXT_WARNING]
-    output = pprint.pformat(data)
-    error(output, formats)
+        key
+            The key to the data you're looking for.
 
+        response
+            The data returned by AWS.
 
-def exit(code=1):
-    """Exit cleanly with a message."""
-    if sys.stderr.isatty():
-        message = "- Exit code: " + str(code)
-        error(message, formats=[TEXT_FAIL])
-    sys.exit(code)
+        reports
+            A list of reports to send info to.
 
+        aws_reporter
+            The AWS response will be sent to this reporter.
 
-def heading(message):
-    """Echo a heading message."""
-    list_of_chars = ["-"[:] * 72]
-    rule = "".join(list_of_chars)
-    echo("")
-    echo(rule, formats=[TEXT_BOLD])
-    echo(message, formats=[TEXT_BOLD])
-    echo(rule, formats=[TEXT_BOLD])
+        job_error_reporter
+            Job errors will be sent to this reporter.
 
+        stderr_reporter
+            Info meant for STDERR will be sent to this reporter.
+
+    Returns:
+        The requested data.
+
+    """
+    data = None
+    try:
+        data = response[key]
+    except KeyError:
+        msg = "No '" + key + "' in response."
+        if job_error_reporter:
+            job_error_reporter(reports, msg)
+        if stderr_reporter:
+            stderr_reporter(reports, msg)
+        raise MissingDataInResponse(msg)
+    return data

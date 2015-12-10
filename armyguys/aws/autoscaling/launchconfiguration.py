@@ -8,7 +8,7 @@ from .. import client as boto3client
 def create(
         profile,
         name,
-        ami_id="ami-ddc7b6b7",
+        ami="ami-ddc7b6b7",
         key_pair=None,
         security_groups=None,
         instance_type="t2.micro",
@@ -25,7 +25,7 @@ def create(
         name
             A name to give to the launch configuration.
 
-        ami_id
+        ami
             An AMI ID to launch the EC2 instances from.
             Defaults to an ECS enabled AMI in us-east-1.
             TO DO: Get this programmatically?
@@ -55,7 +55,7 @@ def create(
     client = boto3client.get("autoscaling", profile)
     params = {}
     params["LaunchConfigurationName"] = name
-    params["ImageId"] = ami_id
+    params["ImageId"] = ami
     params["InstanceType"] = instance_type
     if key_pair:
         params["KeyName"] = key_pair

@@ -43,11 +43,16 @@ class PluginCli(click.MultiCommand):
     def get_command(self, ctx, name):
         """Load the command from the plugin.
 
+        If there is no such plugin, an exception is raised.
+
         If the plugin module does not implement the command,
         an exception is raised.
 
         """
-        plugin = self.plugins[name]
+        try:
+            plugin = self.plugins[name]
+        except KeyError:
+            ctx.fail("No such command '" + str(name) + "'.")
         try:
             command = getattr(plugin, name)
         except AttributeError:
@@ -55,5 +60,5 @@ class PluginCli(click.MultiCommand):
             message += "No command called `" + str(name) + "` "
             message += "is defined in the module "
             message += "`" + str(plugin.__name__) + "`.\n"
-            raise click.ClickException(message)
+            ctx.fail(message)
         return command
