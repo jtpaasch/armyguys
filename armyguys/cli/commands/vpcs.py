@@ -1,10 +1,14 @@
 # -*- coding: utf-8 -*-
 
-"""Commands for managing VPCs."""
+"""Commands for managing availability zones."""
 
 import click
 
 from ...jobs import vpcs as vpc_jobs
+
+from ...jobs.exceptions import AwsError
+from ...jobs.exceptions import MissingKey
+from ...jobs.exceptions import PermissionDenied
 
 from .. import utils
 
@@ -17,12 +21,6 @@ def vpcs():
 
 @vpcs.command(name="list")
 @click.option(
-    "--verbose",
-    type=int,
-    default=0,
-    multiple=True,
-    help="Display details.")
-@click.option(
     "--profile",
     help="An AWS profile to connect with.")
 @click.option(
@@ -32,19 +30,23 @@ def vpcs():
     "--access-key-secret",
     help="An AWS access key secret.")
 def list_vpcs(
-        verbose=None,
         profile=None,
         access_key_id=None,
         access_key_secret=None):
     """List VPCs."""
     aws_profile = utils.get_profile(profile, access_key_id, access_key_secret)
-    utils.log_heading(verbose, "Fetching VPCs")
-    vpcs = vpc_jobs.fetch.get_all(aws_profile)
+
+    try:
+        vpcs = vpc_jobs.fetch_all(aws_profile)
+    except PermissionDenied:
+        msg = "You don't have premission to view VPCs."
+        raise click.ClickException(msg)
+    except MissingKey as error:
+        raise click.ClickException(str(error))
+    except AwsError as error:
+        raise click.ClickException(str(error))
+
     if vpcs:
-        for record in vpcs:
-            if record["IsDefault"]:
-                utils.echo(verbose, record, "VpcId", pre="*")
-            else:
-                utils.echo(verbose, record, "VpcId")
-    else:
-        utils.log(verbose, "No VPCs.")
+        for vpc in vpcs:
+            display_name = vpc_jobs.get_display_name(vpc)
+            click.echo(display_name)

@@ -2,65 +2,16 @@
 
 """Tools to help with running jobs."""
 
-from .exceptions import BadResponse
-from .exceptions import MissingDataInResponse
+from botocore.exceptions import ClientError
+
+from .exceptions import AwsError
+from .exceptions import MissingKey
 from .exceptions import Non200Response
+from .exceptions import PermissionDenied
 
 
-def check_response_is_ok(
-        response,
-        reports=None,
-        aws_reporter=None,
-        job_error_reporter=None,
-        stdout_reporter=None):
-    """Check that an AWS response is okay.
-
-    Args:
-
-        response
-            The data returned by AWS.
-
-        reports
-            A list of reports to send info to.
-
-        aws_reporter
-            The AWS response will be sent to this reporter.
-
-        job_error_reporter
-            Job errors will be sent to this reporter.
-
-        stderr_reporter
-            Info meant for STDERR will be sent to this reporter.
-
-    """
-    if aws_reporter:
-        aws_reporter(reports, response)
-    try:
-        status_code = response["ResponseMetadata"]["HTTPStatusCode"]
-    except KeyError:
-        msg = "Could not find status code in response."
-        if job_error_reporter:
-            job_error_reporter(reports, msg)
-        if stderr_reporter:
-            stderr_reporter(reports, msg)
-        raise BadResponse(msg)
-    if status_code != 200:
-        msg = "Response code was not 200 OK."
-        if job_error_reporter:
-            job_error_reporter(reports, msg)
-        if stderr_reporter:
-            stderr_reporter(reports, msg)
-        raise Non200Response
-
-
-def get_data_in_response(
-        key,
-        response,
-        reports=None,
-        aws_reporter=None,
-        job_error_reporter=None,
-        stdout_reporter=None):
-    """Check that an AWS response is okay.
+def get_data(key, response):
+    """Extract some data from a response.
 
     Args:
 
@@ -68,19 +19,10 @@ def get_data_in_response(
             The key to the data you're looking for.
 
         response
-            The data returned by AWS.
+            The data to look in.
 
-        reports
-            A list of reports to send info to.
-
-        aws_reporter
-            The AWS response will be sent to this reporter.
-
-        job_error_reporter
-            Job errors will be sent to this reporter.
-
-        stderr_reporter
-            Info meant for STDERR will be sent to this reporter.
+    Raises:
+        ``MissingKey`` if it can't find the key.
 
     Returns:
         The requested data.
@@ -91,9 +33,51 @@ def get_data_in_response(
         data = response[key]
     except KeyError:
         msg = "No '" + key + "' in response."
-        if job_error_reporter:
-            job_error_reporter(reports, msg)
-        if stderr_reporter:
-            stderr_reporter(reports, msg)
-        raise MissingDataInResponse(msg)
+        raise MissingKey(msg)
     return data
+
+
+def do_request(package, method, params):
+    """Perform an AWS request.
+
+    Args:
+
+        package
+            The package that implements a boto3 request.
+
+        method
+            The method/function in the package to call.
+
+        params
+            A dict of kwargs to pass to the method.
+
+    Returns:
+        The response returned by AWS.
+
+    """
+    func = getattr(package, method)
+    response = None
+    try:
+        response = func(**params)
+    except ClientError as error:
+        http_code = error.response["ResponseMetadata"]["HTTPStatusCode"]
+        error_code = error.response["Error"]["Code"]
+        message = error.response["Error"]["Message"]
+
+        if error_code == "UnauthorizedOperation":
+            msg = "You do not have permission to do this."
+            raise PermissionDenied(msg)
+        else:
+            raise AwsError(message)
+
+    if response:
+        try:
+            status_code = response["ResponseMetadata"]["HTTPStatusCode"]
+        except KeyError:
+            msg = "Could not find status code in response."
+            raise MissingKey(msg)
+        if status_code != 200:
+            msg = "Response code was not 200 OK."
+            raise Non200Response
+
+    return response

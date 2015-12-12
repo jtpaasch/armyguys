@@ -4,7 +4,11 @@
 
 import click
 
-from ...jobs import availabilityzones as zone_jobs
+from ...jobs import zones as zone_jobs
+
+from ...jobs.exceptions import AwsError
+from ...jobs.exceptions import MissingKey
+from ...jobs.exceptions import PermissionDenied
 
 from .. import utils
 
@@ -17,12 +21,6 @@ def zones():
 
 @zones.command(name="list")
 @click.option(
-    "--verbose",
-    type=int,
-    default=0,
-    multiple=True,
-    help="Display details.")
-@click.option(
     "--profile",
     help="An AWS profile to connect with.")
 @click.option(
@@ -32,16 +30,22 @@ def zones():
     "--access-key-secret",
     help="An AWS access key secret.")
 def list_availability_zones(
-        verbose=None,
         profile=None,
         access_key_id=None,
         access_key_secret=None):
-    """List available availability zones."""
+    """List availability zones."""
     aws_profile = utils.get_profile(profile, access_key_id, access_key_secret)
-    utils.log_heading(verbose, "Fetching availability zones")
-    zones = zone_jobs.fetch.get_all(aws_profile)
+
+    try:
+        zones = zone_jobs.fetch_all(aws_profile)
+    except PermissionDenied:
+        msg = "You don't have premission to view availability zones."
+        raise click.ClickException(msg)
+    except MissingKey as error:
+        raise click.ClickException(str(error))
+    except AwsError as error:
+        raise click.ClickException(str(error))
+    
     if zones:
         for zone in zones:
-            utils.echo(verbose, zone, "ZoneName")
-    else:
-        utils.log(verbose, "No availability zones.")
+            click.echo(zone["ZoneName"])

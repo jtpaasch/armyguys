@@ -3,17 +3,22 @@
 """Custom exceptions for jobs."""
 
 
-class BadResponse(Exception):
-    """Raise when AWS returns a response we can't parse."""
+class AwsError(Exception):
+    """Raise when AWS raises an error we don't expect."""
     pass
 
 
-class MissingDataInResponse(Exception):
-    """Raise when expected data is missing in a response."""
+class MissingKey(Exception):
+    """Raise when expected key is missing in an AWS response."""
 
 
 class Non200Response(Exception):
     """Raise when AWS returns a non-200 response."""
+
+
+class PermissionDenied(Exception):
+    """Raise when the user lacks permission/authorization."""
+    pass
 
 
 class ResourceAlreadyExists(Exception):
