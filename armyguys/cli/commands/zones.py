@@ -8,6 +8,7 @@ from ...jobs import zones as zone_jobs
 
 from ...jobs.exceptions import AwsError
 from ...jobs.exceptions import MissingKey
+from ...jobs.exceptions import Non200Response
 from ...jobs.exceptions import PermissionDenied
 
 from .. import utils
@@ -41,7 +42,7 @@ def list_availability_zones(
     except PermissionDenied:
         msg = "You don't have premission to view availability zones."
         raise click.ClickException(msg)
-    except MissingKey as error:
+    except (MissingKey, Non200Response) as error:
         raise click.ClickException(str(error))
     except AwsError as error:
         raise click.ClickException(str(error))
