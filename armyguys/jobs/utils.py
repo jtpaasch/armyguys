@@ -37,7 +37,7 @@ def get_data(key, response):
     return data
 
 
-def do_request(package, method, params):
+def do_request(package, method, params, error_handler=None):
     """Perform an AWS request.
 
     Args:
@@ -51,12 +51,17 @@ def do_request(package, method, params):
         params
             A dict of kwargs to pass to the method.
 
+        error_handler
+            A function to handle AWS errors.
+
     Returns:
         The response returned by AWS.
 
     """
     func = getattr(package, method)
     response = None
+    if not params:
+        params = {}
     try:
         response = func(**params)
     except ClientError as error:
@@ -67,6 +72,8 @@ def do_request(package, method, params):
         if error_code == "UnauthorizedOperation":
             msg = "You do not have permission to do this."
             raise PermissionDenied(msg)
+        elif error_handler:
+            error_handler(error)
         else:
             raise AwsError(message)
 

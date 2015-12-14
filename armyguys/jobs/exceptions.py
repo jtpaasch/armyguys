@@ -33,6 +33,11 @@ class ResourceDoesNotExist(Exception):
     pass
 
 
+class ResourceHasDependency(Exception):
+    """Raise when a resource is dependent on another resource."""
+    pass
+
+
 class ResourceNotCreated(Exception):
     """Raise when a resource failed to get created."""
     pass

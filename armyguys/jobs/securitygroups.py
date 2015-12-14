@@ -10,7 +10,9 @@ from ..aws import securitygroup
 
 from .exceptions import ResourceAlreadyExists
 from .exceptions import ResourceDoesNotExist
+from .exceptions import ResourceHasDependency
 from .exceptions import ResourceNotCreated
+from .exceptions import ResourceNotDeleted
 from .exceptions import WaitTimedOut
 
 from . import utils
@@ -184,6 +186,32 @@ def polling_fetch(profile, ref, max_attempts=10, wait_interval=1):
     return data
 
 
+def delete_error_handler(error):
+    """Handle errors that arise when you delete security groups.
+
+    Args:
+
+        error
+            An AWS ``ClientError`` exception.
+
+    Raises:
+        ``ResourceHasDependency`` if the security group is dependent
+        on another resource, or ``ResourceDoseNotExist`` if the
+        security group is gone.
+
+    Returns:
+        None, if the error is not worth handling.
+
+    """
+    code = error.response["Error"]["Code"]
+    if code == "InvalidGroup.NotFound":
+        raise ResourceDoesNotExist()
+    elif code == "DependencyViolation":
+        raise ResourceHasDependency()
+    else:
+        raise error
+
+
 def polling_delete(profile, ref, max_attempts=10, wait_interval=1):
     """Try to delete a security group repeatedly until it's gone.
 
@@ -216,16 +244,22 @@ def polling_delete(profile, ref, max_attempts=10, wait_interval=1):
     
     is_deleted = False
     count = 0
+    params = {}
+    params["profile"] = profile
+    params["group_id"] = sg_id
     while count < max_attempts:
         try:
-            response = securitygroup.delete(profile, sg_id)
-        except ClientError as error:
-            code = error.response["Error"]["Code"]
-            if code == "InvalidGroup.NotFound":
-                is_deleted = True
-                break
-            elif code != "DependencyViolation":
-                raise
+            response = utils.do_request(
+                securitygroup,
+                "delete",
+                params,
+                delete_error_handler)
+        except ResourceHasDependency:
+            pass
+        except ResourceDoesNotExist:
+            is_deleted = True
+        if response:
+            is_deleted = True
         if is_deleted:
             break
         else:
