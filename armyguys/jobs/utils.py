@@ -83,7 +83,7 @@ def do_request(package, method, params, error_handler=None):
         except KeyError:
             msg = "Could not find status code in response."
             raise MissingKey(msg)
-        if status_code != 200:
+        if status_code not in [200, 204]:
             msg = "Response code was not 200 OK."
             raise Non200Response
 

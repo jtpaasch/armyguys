@@ -6,7 +6,7 @@ from os import path
 from .. import client as boto3client
 
 
-def create(profile, s3bucket, s3key, contents=None, filepath=None):
+def create(profile, bucket, key, contents=None, filepath=None):
     """Upload a file to an S3 bucket.
 
     Args:
@@ -14,10 +14,10 @@ def create(profile, s3bucket, s3key, contents=None, filepath=None):
         profile
             A profile to connect to AWS with.
 
-        s3bucket
+        bucket
             The name of the bucket to upload the file to.
 
-        s3key
+        key
             The key/name to give to the file in S3.
 
         contents
@@ -42,12 +42,12 @@ def create(profile, s3bucket, s3key, contents=None, filepath=None):
     client = boto3client.get("s3", profile)
     params = {}
     params["Body"] = data
-    params["Bucket"] = s3bucket
-    params["Key"] = s3key
+    params["Bucket"] = bucket
+    params["Key"] = key
     return client.put_object(**params)
 
 
-def delete(profile, s3key, s3bucket):
+def delete(profile, key, bucket):
     """Delete a file from an S3 bucket.
 
     Args:
@@ -55,10 +55,10 @@ def delete(profile, s3key, s3bucket):
         profile
             A profile to connect to AWS with.
 
-        s3key
+        key
             The name of the file you want to delete.
 
-        s3bucket
+        bucket
             The bucket to delete the file from.
 
     Returns:
@@ -67,6 +67,32 @@ def delete(profile, s3key, s3bucket):
     """
     client = boto3client.get("s3", profile)
     params = {}
-    params["Key"] = s3key
-    params["Bucket"] = s3bucket
+    params["Key"] = key
+    params["Bucket"] = bucket
     return client.delete_object(**params)
+
+
+def get(profile, bucket, prefix=None):
+    """Get all files in an S3 bucket.
+
+    Args:
+
+        profile
+            A profile to connect to AWS with.
+
+        bucket
+            The name of the bucket to fetch files from.
+
+        prefix
+            Limit the search to files that begin with this.
+
+    Returns:
+        The JSON response returned by boto3.
+
+    """
+    client = boto3client.get("s3", profile)
+    params = {}
+    params["Bucket"] = bucket
+    if prefix:
+        params["Prefix"] = prefix
+    return client.list_objects(**params)

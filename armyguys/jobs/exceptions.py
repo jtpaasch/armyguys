@@ -8,6 +8,10 @@ class AwsError(Exception):
     pass
 
 
+class FileDoesNotExist(Exception):
+    """Raise when a file doesn't exist on a filesystem."""
+    pass
+
 class MissingKey(Exception):
     """Raise when expected key is missing in an AWS response."""
     pass

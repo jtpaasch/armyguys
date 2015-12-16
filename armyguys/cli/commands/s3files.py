@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 
-"""Commands for managing security groups."""
+"""Commands for managing S3 files."""
 
 import click
 
-from ...jobs import securitygroups as sg_jobs
+from ...jobs import s3files as s3_jobs
 
 from ...jobs.exceptions import AwsError
+from ...jobs.exceptions import FileDoesNotExist
 from ...jobs.exceptions import MissingKey
 from ...jobs.exceptions import Non200Response
 from ...jobs.exceptions import PermissionDenied
@@ -19,12 +20,13 @@ from .. import utils
 
 
 @click.group()
-def securitygroups():
-    """Manage security groups."""
+def s3files():
+    """Manage S3 files."""
     pass
 
 
-@securitygroups.command(name="list")
+@s3files.command(name="list")
+@click.argument("bucket")
 @click.option(
     "--profile",
     help="An AWS profile to connect with.")
@@ -34,38 +36,35 @@ def securitygroups():
 @click.option(
     "--access-key-secret",
     help="An AWS access key secret.")
-def list_security_groups(
+def list_s3_files(
+        bucket,
         profile=None,
         access_key_id=None,
         access_key_secret=None):
-    """List security groups."""
+    """List S3 files."""
     aws_profile = utils.get_profile(profile, access_key_id, access_key_secret)
 
     try:
-        security_groups = sg_jobs.fetch_all(aws_profile)
+        files = s3_jobs.fetch_all(aws_profile, bucket)
     except PermissionDenied:
-        msg = "You don't have premission to view security groups."
+        msg = "You don't have premission to view S3 files."
         raise click.ClickException(msg)
     except (MissingKey, Non200Response) as error:
         raise click.ClickException(str(error))
     except AwsError as error:
         raise click.ClickException(str(error))
+    except ResourceDoesNotExist as error:
+        raise click.ClickException(str(error))
 
-    if security_groups:
-        for security_group in security_groups:
-            display_name = sg_jobs.get_display_name(security_group)
+    if files:
+        for record in files:
+            display_name = s3_jobs.get_display_name(record)
             click.echo(display_name)
 
-
-@securitygroups.command(name="create")
+@s3files.command(name="create")
+@click.argument("bucket")
 @click.argument("name")
-@click.option(
-    "--vpc",
-    help="A VPC name (or ID).")
-@click.option(
-    "--tag",
-    multiple=True,
-    help="KEY:VALUE tag for the security group.")
+@click.argument("filepath", type=click.Path(exists=True))
 @click.option(
     "--profile",
     help="An AWS profile to connect with.")
@@ -75,24 +74,21 @@ def list_security_groups(
 @click.option(
     "--access-key-secret",
     help="An AWS access key secret.")
-def create_security_group(
+def create_s3_file(
+        bucket,
         name,
-        vpc=None,
-        tag=None,
+        filepath,
+        private=None,
         profile=None,
         access_key_id=None,
         access_key_secret=None):
-    """Create security groups."""
+    """Create s3 files."""
     aws_profile = utils.get_profile(profile, access_key_id, access_key_secret)
 
-    tags = None
-    if tag:
-        tags = utils.parse_tags(tag)
-
     try:
-        security_groups = sg_jobs.create(aws_profile, name, vpc, tags)
+        files = s3_jobs.create(aws_profile, bucket, name, filepath)
     except PermissionDenied:
-        msg = "You don't have premission to create security groups."
+        msg = "You don't have premission to create S3 files."
         raise click.ClickException(msg)
     except (MissingKey, Non200Response) as error:
         raise click.ClickException(str(error))
@@ -101,13 +97,14 @@ def create_security_group(
     except (ResourceDoesNotExist, ResourceAlreadyExists, ResourceNotCreated) as error:
         raise click.ClickException(str(error))
 
-    if security_groups:
-        for security_group in security_groups:
-            display_name = sg_jobs.get_display_name(security_group)
+    if files:
+        for record in files:
+            display_name = s3_jobs.get_display_name(record)
             click.echo(display_name)
 
 
-@securitygroups.command(name="delete")
+@s3files.command(name="delete")
+@click.argument("bucket")
 @click.argument("name")
 @click.option(
     "--profile",
@@ -118,18 +115,19 @@ def create_security_group(
 @click.option(
     "--access-key-secret",
     help="An AWS access key secret.")
-def delete_security_group(
+def delete_s3_file(
+        bucket,
         name,
         profile=None,
         access_key_id=None,
         access_key_secret=None):
-    """Delete security groups."""
+    """Delete s3 files."""
     aws_profile = utils.get_profile(profile, access_key_id, access_key_secret)
 
     try:
-        security_groups = sg_jobs.delete(aws_profile, name)
+        s3_jobs.delete(aws_profile, bucket, name)
     except PermissionDenied:
-        msg = "You don't have premission to delete security groups."
+        msg = "You don't have premission to delete S3 files."
         raise click.ClickException(msg)
     except (MissingKey, Non200Response) as error:
         raise click.ClickException(str(error))

@@ -11,12 +11,16 @@ should be specified in the ``plugins`` dictionary below.
 
 from .plugincli import PluginCli
 
+from .commands import s3buckets
+from .commands import s3files
 from .commands import securitygroups
 from .commands import vpcs
 from .commands import zones
 
 
 plugins = {
+    "s3buckets": s3buckets,
+    "s3files": s3files,
     "securitygroups": securitygroups,
     "vpcs": vpcs,
     "zones": zones,

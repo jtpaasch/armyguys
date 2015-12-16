@@ -13,10 +13,10 @@ def get_display_name(record):
     Args:
 
         record
-            A VPC record returned by AWS.
+            A record returned by AWS.
 
     Returns:
-        A display name for the security group.
+        A display name for the VPC.
 
     """
     ref = get_ref(record)

@@ -167,6 +167,12 @@ def polling_fetch(profile, ref, max_attempts=10, wait_interval=1):
         ref
             The name or ID of a security group.
 
+        max_attempts
+            The max number of times to poll AWS.
+
+        wait_interval
+            How many seconds to wait between each poll.
+
     Returns:
         The security group's info, or None if it times out.
 
@@ -358,7 +364,7 @@ def delete(profile, ref, vpc=None):
     is_deleted = False
     try:
         is_deleted = polling_delete(profile, ref)
-    except ResourceDoesNotExist as error:
+    except ResourceDoesNotExist:
         msg = "No security group '" + str(ref) + "'."
         raise ResourceDoesNotExist(msg)
     except WaitTimedOut:

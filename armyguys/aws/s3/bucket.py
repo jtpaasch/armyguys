@@ -69,3 +69,19 @@ def delete(profile, bucket):
     params = {}
     params["Bucket"] = bucket
     return client.delete_bucket(**params)
+
+
+def get(profile):
+    """Get all s3 buckets.
+
+    Args:
+
+        profile
+            A profile to connect to AWS with.
+
+    Returns:
+         The data returned by boto3.
+
+    """
+    client = boto3client.get("s3", profile)
+    return client.list_buckets()

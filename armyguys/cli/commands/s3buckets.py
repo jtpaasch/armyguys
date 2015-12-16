@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 
-"""Commands for managing security groups."""
+"""Commands for managing S3 buckets."""
 
 import click
 
-from ...jobs import securitygroups as sg_jobs
+from ...jobs import s3buckets as s3_jobs
 
 from ...jobs.exceptions import AwsError
 from ...jobs.exceptions import MissingKey
@@ -19,12 +19,12 @@ from .. import utils
 
 
 @click.group()
-def securitygroups():
-    """Manage security groups."""
+def s3buckets():
+    """Manage S3 buckets."""
     pass
 
 
-@securitygroups.command(name="list")
+@s3buckets.command(name="beanstalk")
 @click.option(
     "--profile",
     help="An AWS profile to connect with.")
@@ -34,38 +34,28 @@ def securitygroups():
 @click.option(
     "--access-key-secret",
     help="An AWS access key secret.")
-def list_security_groups(
+def list_elasticbeanstalk_s3_buckets(
         profile=None,
         access_key_id=None,
         access_key_secret=None):
-    """List security groups."""
+    """List S3 buckets used by Elastic Beanstalk."""
     aws_profile = utils.get_profile(profile, access_key_id, access_key_secret)
 
     try:
-        security_groups = sg_jobs.fetch_all(aws_profile)
+        beanstalk_bucket = s3_jobs.fetch_beanstalk_bucket(aws_profile)
     except PermissionDenied:
-        msg = "You don't have premission to view security groups."
+        msg = "You don't have premission to view Elastic Beanstalk S3 buckets."
         raise click.ClickException(msg)
     except (MissingKey, Non200Response) as error:
         raise click.ClickException(str(error))
     except AwsError as error:
         raise click.ClickException(str(error))
 
-    if security_groups:
-        for security_group in security_groups:
-            display_name = sg_jobs.get_display_name(security_group)
-            click.echo(display_name)
+    if beanstalk_bucket:
+        click.echo(beanstalk_bucket)
 
 
-@securitygroups.command(name="create")
-@click.argument("name")
-@click.option(
-    "--vpc",
-    help="A VPC name (or ID).")
-@click.option(
-    "--tag",
-    multiple=True,
-    help="KEY:VALUE tag for the security group.")
+@s3buckets.command(name="list")
 @click.option(
     "--profile",
     help="An AWS profile to connect with.")
@@ -75,24 +65,56 @@ def list_security_groups(
 @click.option(
     "--access-key-secret",
     help="An AWS access key secret.")
-def create_security_group(
-        name,
-        vpc=None,
-        tag=None,
+def list_s3_buckets(
         profile=None,
         access_key_id=None,
         access_key_secret=None):
-    """Create security groups."""
+    """List S3 buckets."""
     aws_profile = utils.get_profile(profile, access_key_id, access_key_secret)
 
-    tags = None
-    if tag:
-        tags = utils.parse_tags(tag)
+    try:
+        buckets = s3_jobs.fetch_all(aws_profile)
+    except PermissionDenied:
+        msg = "You don't have premission to view S3 buckets."
+        raise click.ClickException(msg)
+    except (MissingKey, Non200Response) as error:
+        raise click.ClickException(str(error))
+    except AwsError as error:
+        raise click.ClickException(str(error))
+
+    if buckets:
+        for bucket in buckets:
+            display_name = s3_jobs.get_display_name(bucket)
+            click.echo(display_name)
+
+@s3buckets.command(name="create")
+@click.argument("name")
+@click.option(
+    "--private",
+    is_flag=True,
+    help="Is it a private bucket?")
+@click.option(
+    "--profile",
+    help="An AWS profile to connect with.")
+@click.option(
+    "--access-key-id",
+    help="An AWS access key ID.")
+@click.option(
+    "--access-key-secret",
+    help="An AWS access key secret.")
+def create_s3_bucket(
+        name,
+        private=None,
+        profile=None,
+        access_key_id=None,
+        access_key_secret=None):
+    """Create s3 buckets."""
+    aws_profile = utils.get_profile(profile, access_key_id, access_key_secret)
 
     try:
-        security_groups = sg_jobs.create(aws_profile, name, vpc, tags)
+        buckets = s3_jobs.create(aws_profile, name, private)
     except PermissionDenied:
-        msg = "You don't have premission to create security groups."
+        msg = "You don't have premission to create S3 buckets."
         raise click.ClickException(msg)
     except (MissingKey, Non200Response) as error:
         raise click.ClickException(str(error))
@@ -101,13 +123,13 @@ def create_security_group(
     except (ResourceDoesNotExist, ResourceAlreadyExists, ResourceNotCreated) as error:
         raise click.ClickException(str(error))
 
-    if security_groups:
-        for security_group in security_groups:
-            display_name = sg_jobs.get_display_name(security_group)
+    if buckets:
+        for bucket in buckets:
+            display_name = s3_jobs.get_display_name(bucket)
             click.echo(display_name)
 
 
-@securitygroups.command(name="delete")
+@s3buckets.command(name="delete")
 @click.argument("name")
 @click.option(
     "--profile",
@@ -118,18 +140,18 @@ def create_security_group(
 @click.option(
     "--access-key-secret",
     help="An AWS access key secret.")
-def delete_security_group(
+def delete_s3_bucket(
         name,
         profile=None,
         access_key_id=None,
         access_key_secret=None):
-    """Delete security groups."""
+    """Delete s3 buckets."""
     aws_profile = utils.get_profile(profile, access_key_id, access_key_secret)
 
     try:
-        security_groups = sg_jobs.delete(aws_profile, name)
+        buckets = s3_jobs.delete(aws_profile, name)
     except PermissionDenied:
-        msg = "You don't have premission to delete security groups."
+        msg = "You don't have premission to delete S3 buckets."
         raise click.ClickException(msg)
     except (MissingKey, Non200Response) as error:
         raise click.ClickException(str(error))
@@ -137,3 +159,4 @@ def delete_security_group(
         raise click.ClickException(str(error))
     except (ResourceDoesNotExist, ResourceNotDeleted) as error:
         raise click.ClickException(str(error))
+
