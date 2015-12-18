@@ -8,7 +8,7 @@ from .. import client as boto3client
 def create(
         profile,
         name,
-        ami="ami-ddc7b6b7",
+        ami,
         key_pair=None,
         security_groups=None,
         instance_type="t2.micro",
@@ -27,8 +27,6 @@ def create(
 
         ami
             An AMI ID to launch the EC2 instances from.
-            Defaults to an ECS enabled AMI in us-east-1.
-            TO DO: Get this programmatically?
 
         key_pair
             The name of a key pair for connecting to the EC2 instances.

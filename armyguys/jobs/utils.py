@@ -2,6 +2,11 @@
 
 """Tools to help with running jobs."""
 
+import sys
+
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+
 from botocore.exceptions import ClientError
 
 from .exceptions import AwsError
@@ -88,3 +93,34 @@ def do_request(package, method, params, error_handler=None):
             raise Non200Response
 
     return response
+
+
+def create_mime_multipart_archive(files):
+    """Create a MIME MultiPart Archive of files.
+
+    Args:
+
+        files
+            A list of {"filepath": path, "contenttype": type} entries.
+
+    Returns:
+        The archive text.
+
+    """
+    combined_message = MIMEMultipart()
+    default_encoding = sys.getdefaultencoding()
+    if files:
+        for record in files:
+            file_path = record["filepath"]
+            content_type = record["contenttype"]
+            with open(file_path, "rb") as f:
+                contents = f.read()
+                message = MIMEText(
+                    contents,
+                    content_type,
+                    default_encoding)
+                message.add_header(
+                    "Content-Disposition",
+                    "attachment; filename=\"%s\"" % (file_path))
+                combined_message.attach(message)
+    return combined_message.as_string()
