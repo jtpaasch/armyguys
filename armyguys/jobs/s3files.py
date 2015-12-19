@@ -45,7 +45,7 @@ def fetch_all(profile, bucket):
             The name of the bucket you want to fetch files from.
 
     Returns:
-        A list of VPCs.
+        A list of S3 files.
 
     """
     if not s3buckets.is_bucket(profile, bucket):

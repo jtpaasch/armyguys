@@ -14,7 +14,9 @@ from .plugincli import PluginCli
 from .commands import launchconfigs
 from .commands import s3buckets
 from .commands import s3files
+from .commands import scalinggroups
 from .commands import securitygroups
+from .commands import subnets
 from .commands import vpcs
 from .commands import zones
 
@@ -23,7 +25,9 @@ plugins = {
     "launchconfigs": launchconfigs,
     "s3buckets": s3buckets,
     "s3files": s3files,
+    "scalinggroups": scalinggroups,
     "securitygroups": securitygroups,
+    "subnets": subnets,
     "vpcs": vpcs,
     "zones": zones,
     }

@@ -41,7 +41,7 @@ def parse_tags(tags):
             key = tag_parts[0].strip()
             value = tag_parts[1].strip()
             if all([key, value]):
-                result.append({"Name": key, "Value": value})
+                result.append({"Key": key, "Value": value})
             elif not key:
                 msg = "Empty tag key: " + str(record)
                 raise click.ClickException(msg)

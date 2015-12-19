@@ -18,7 +18,7 @@ def create(profile, cidr_block, vpc, availability_zone=None):
             For instance, "10.0.0.0/24".
 
         vpc
-            The ID of the VPC you want to cerate the subnet in.
+            The ID of the VPC you want to create the subnet in.
 
         availability_zone
             The name of the availability zone to create the subnet in.
@@ -119,3 +119,31 @@ def disable_public_ips(profile, subnet):
     params["SubnetId"] = subnet
     params["MapPublicIpOnLaunch"] = {"Value": False}
     return client.modify_subnet_attribute(**params)
+
+
+def tag(profile, subnet, key, value):
+    """Add a tag to a subnet.
+
+    Args:
+
+        profile
+            A profile to connect to AWS with.
+
+        subnet
+            The ID of the subnet you want to tag.
+
+        key
+            The key/name of the tag.
+
+        value
+            The value of the tag.
+
+    Returns:
+        The response returned by boto3.
+
+    """
+    client = boto3client.get("ec2", profile)
+    params = {}
+    params["Resources"] = [subnet]
+    params["Tags"] = [{"Key": key, "Value": value}]
+    return client.create_tags(**params)

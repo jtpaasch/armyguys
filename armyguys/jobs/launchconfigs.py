@@ -170,65 +170,6 @@ def delete_error_handler(error):
         raise error
 
 
-def polling_delete(profile, ref, max_attempts=10, wait_interval=1):
-    """Try to delete a security group repeatedly until it's gone.
-
-    Args:
-
-        profile
-            A profile to connect to AWS with.
-
-        ref
-            The name or ID of a security group.
-
-        max_attempts
-            The number of times you want to try to delete the group.
-
-        wait_interval
-            How many seconds to wait between each deletion attempt.
-
-    Returns:
-        True if the security group gets deleted, False if not.
-
-    """
-    # Make sure the security group exists.
-    sg_id = None
-    sg_data = fetch(profile, ref)
-    if sg_data:
-        sg_id = get_id(sg_data[0])
-    else:
-        msg = "No security group '" + str(ref) + "'."
-        raise ResourceDoesNotExist(msg)
-    
-    is_deleted = False
-    count = 0
-    params = {}
-    params["profile"] = profile
-    params["group_id"] = sg_id
-    while count < max_attempts:
-        try:
-            response = utils.do_request(
-                securitygroup,
-                "delete",
-                params,
-                delete_error_handler)
-        except ResourceHasDependency:
-            pass
-        except ResourceDoesNotExist:
-            is_deleted = True
-        if response:
-            is_deleted = True
-        if is_deleted:
-            break
-        else:
-            count += 1
-            sleep(wait_interval)
-    if not is_deleted:
-        msg = "Timed out waiting for security group to be deleted."
-        raise WaitTimedOut(msg)
-    return is_deleted
-
-
 def create(
         profile,
         name,

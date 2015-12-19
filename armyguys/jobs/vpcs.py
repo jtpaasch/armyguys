@@ -19,12 +19,13 @@ def get_display_name(record):
         A display name for the VPC.
 
     """
+    vpc_id = get_id(record)
     ref = get_ref(record)
     if ref.startswith("vpc-"):
         display_name = "Unnamed"
     else:
         display_name = ref
-    return display_name + " (" + str(record["VpcId"]) + ")"
+    return display_name + " (" + str(vpc_id) + ")"
 
 
 def get_ref(record):

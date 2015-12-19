@@ -338,7 +338,7 @@ def create(profile, name, vpc=None, tags=None):
             params = {}
             params["profile"] = profile
             params["security_group"] = sg_id
-            params["key"] = tag["Name"]
+            params["key"] = tag["Key"]
             params["value"] = tag["Value"]
             utils.do_request(securitygroup, "tag", params)
 

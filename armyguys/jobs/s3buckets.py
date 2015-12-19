@@ -37,7 +37,7 @@ def fetch_all(profile):
             A profile to connect to AWS with.
 
     Returns:
-        A list of VPCs.
+        A list of S3 buckets.
 
     """
     params = {}
@@ -133,7 +133,6 @@ def polling_fetch(profile, name, max_attempts=10, wait_interval=1):
     count = 0
     while count < max_attempts:
         data = fetch_by_name(profile, name)
-        from pprint import pprint; pprint(data)
         if data:
             break
         else:
