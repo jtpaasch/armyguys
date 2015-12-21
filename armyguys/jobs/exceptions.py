@@ -12,6 +12,12 @@ class FileDoesNotExist(Exception):
     """Raise when a file doesn't exist on a filesystem."""
     pass
 
+
+class ImproperlyConfigured(Exception):
+    """Raise when a job is improperly configured."""
+    pass
+
+
 class MissingKey(Exception):
     """Raise when expected key is missing in an AWS response."""
     pass

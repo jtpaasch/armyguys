@@ -11,7 +11,7 @@ from .exceptions import ResourceNotCreated
 from .exceptions import ResourceNotDeleted
 
 from . import vpcs as vpc_jobs
-from . import zones as zone_jobs
+from . import availabilityzones as zone_jobs
 
 from . import utils
 

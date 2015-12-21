@@ -132,6 +132,26 @@ def fetch_by_id(profile, vpc_id):
     return data
 
 
+def fetch_default(profile):
+    """Fetch the default VPC.
+
+    Args:
+
+        profile
+            A profile to connect to AWS with.
+
+    Returns:
+        The defalut VPC's info, or None if EC2 classic.
+
+    """
+    params = {}
+    params["profile"] = profile
+    params["filters"] = [{"Name": "isDefault", "Values": ["true"]}]
+    response = utils.do_request(vpc, "get", params)
+    data = utils.get_data("Vpcs", response)
+    return data
+
+
 def fetch(profile, ref):
     """Fetch a VPC.
 

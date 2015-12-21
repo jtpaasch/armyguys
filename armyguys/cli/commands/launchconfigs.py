@@ -4,7 +4,7 @@
 
 import click
 
-from ...jobs import launchconfigs as launchconfig_jobs
+from ...jobs import launchconfigurations as launchconfig_jobs
 
 from ...jobs.exceptions import AwsError
 from ...jobs.exceptions import MissingKey

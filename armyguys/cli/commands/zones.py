@@ -4,7 +4,7 @@
 
 import click
 
-from ...jobs import zones as zone_jobs
+from ...jobs import availabilityzones as zone_jobs
 
 from ...jobs.exceptions import AwsError
 from ...jobs.exceptions import MissingKey

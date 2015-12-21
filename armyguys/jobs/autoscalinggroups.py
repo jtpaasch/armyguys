@@ -8,7 +8,11 @@ from botocore.exceptions import ClientError
 
 from ..aws.autoscaling import autoscalinggroup
 
-from . import launchconfigs as launchconfig_jobs
+from . import availabilityzones as zone_jobs
+from . import launchconfigurations as launchconfig_jobs
+from . import regions as region_jobs
+from . import subnets as subnet_jobs
+from . import vpcs as vpc_jobs
 
 from .exceptions import ResourceAlreadyExists
 from .exceptions import ResourceDoesNotExist
@@ -132,10 +136,52 @@ def polling_fetch(profile, name, max_attempts=10, wait_interval=1):
     return data
 
 
+def polling_is_deleted(profile, name, max_attempts=10, wait_interval=1):
+    """Repeatedly check if an auto scaling group is deleted.
+
+    Args:
+
+        profile
+            A profile to connect to AWS with.
+
+        name
+            The name of an auto scaling group.
+
+        max_attempts
+            The max number of times to poll AWS.
+
+        wait_interval
+            How many seconds to wait between each poll.
+
+    Returns:
+        The auto scaling group's info, if any was returned.
+
+    """
+    data = None
+    count = 0
+    while count < max_attempts:
+        data = fetch_by_name(profile, name)
+        if not data:
+            break
+        else:
+            count += 1
+            sleep(wait_interval)
+    if data:
+        msg = "Timed out waiting for auto scaling group to be deleted."
+        raise WaitTimedOut(msg)
+    return data
+
+
 def create(
         profile,
         name,
-        launch_configuration):
+        launch_configuration,
+        min_size=1,
+        max_size=1,
+        desired_size=1,
+        availability_zones=None,
+        subnets=None,
+        vpc=None):
     """Create an auto scaling group.
 
     Args:
@@ -149,6 +195,29 @@ def create(
         launch_configuration
             The name of a launch configuration to launch from.
 
+        min_size
+            The minimum number of EC2 instances to keep in the group.
+
+        max_size
+            The maximum number of EC2 instances to keep in the group.
+
+        desired_size
+            The ideal number of EC2 instances to keep in the group.
+
+        availability_zones
+            A list of availability zones to launch the group in.
+            If no availability zones or subnets are specified,
+            the auto scaling group will be launched in all
+            available subnets/availability zones.
+
+        subnets
+            A list of subnets to launch the group in.
+
+        vpc
+            A VPC to launch into. If this is specified without
+            any subnets, the auto scaling group will be launched
+            into all available subnets.
+
     Returns:
         The auto scaling group's info.
 
@@ -158,11 +227,23 @@ def create(
         msg = "No launch configuration '" + str(launch_configuration) + "'."
         raise ResourceDoesNotExist(msg)
 
+    # Get the availability zones/subnets we want to delpoy into.
+    sub_regions = region_jobs.get_available_sub_regions(
+        profile,
+        vpc,
+        subnets,
+        availability_zones)
+    
     # Now we can create it.
     params = {}
     params["profile"] = profile
     params["name"] = name
     params["launch_configuration"] = launch_configuration
+    params["min_size"] = min_size
+    params["max_size"] = max_size
+    params["desired_size"] = desired_size
+    params["availability_zones"] = sub_regions["availability_zones"]
+    params["subnets"] = sub_regions["subnets"]
     response = utils.do_request(autoscalinggroup, "create", params)
 
     # Now check that it exists.
@@ -193,19 +274,20 @@ def delete(profile, name):
 
     """
     # Make sure it exists before we try to delete it.
-    launch_config = fetch_by_name(profile, name)
-    if not launch_config:
-        msg = "No launch configuration '" + str(name) + "'."
+    auto_scaling_group = fetch_by_name(profile, name)
+    if not auto_scaling_group:
+        msg = "No auto scaling group '" + str(name) + "'."
         raise ResourceDoesNotExist(msg)
 
     # Now try to delete it.
     params = {}
     params["profile"] = profile
-    params["launch_configuration"] = name
-    response = utils.do_request(launchconfiguration, "delete", params)
+    params["autoscaling_group"] = name
+    response = utils.do_request(autoscalinggroup, "delete", params)
 
     # Check that it was, in fact, deleted.
-    launch_config = fetch_by_name(profile, name)
-    if launch_config:
-        msg = "Launch configuration '" + str(name) + "' was not deleted."
+    is_deleted = polling_is_deleted(profile, name)
+    autoscaling_group = fetch_by_name(profile, name)
+    if auto_scaling_group:
+        msg = "Auto scaling group '" + str(name) + "' was not deleted."
         raise ResourceNotDeleted(msg)
