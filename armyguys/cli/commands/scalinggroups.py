@@ -175,3 +175,71 @@ def delete_auto_scaling_group(
         raise click.ClickException(str(error))
     except WaitTimedOut as error:
         raise click.ClickException(str(error))
+
+
+@scalinggroups.command(name="serve")
+@click.argument("name")
+@click.argument("loadbalancer")
+@click.option(
+    "--profile",
+    help="An AWS profile to connect with.")
+@click.option(
+    "--access-key-id",
+    help="An AWS access key ID.")
+@click.option(
+    "--access-key-secret",
+    help="An AWS access key secret.")
+def serve(
+        name,
+        loadbalancer,
+        profile=None,
+        access_key_id=None,
+        access_key_secret=None):
+    """Attach auto scaling groups to load balancers."""
+    aws_profile = utils.get_profile(profile, access_key_id, access_key_secret)
+
+    try:
+        scalinggroup_jobs.attach_load_balancer(aws_profile, name, loadbalancer)
+    except PermissionDenied:
+        msg = "You don't have premission to attach load balancers."
+        raise click.ClickException(msg)
+    except (MissingKey, Non200Response) as error:
+        raise click.ClickException(str(error))
+    except ResourceDoesNotExist as error:
+        raise click.ClickException(str(error))
+    except AwsError as error:
+        raise click.ClickException(str(error))
+
+
+@scalinggroups.command(name="unserve")
+@click.argument("name")
+@click.argument("loadbalancer")
+@click.option(
+    "--profile",
+    help="An AWS profile to connect with.")
+@click.option(
+    "--access-key-id",
+    help="An AWS access key ID.")
+@click.option(
+    "--access-key-secret",
+    help="An AWS access key secret.")
+def unserve(
+        name,
+        loadbalancer,
+        profile=None,
+        access_key_id=None,
+        access_key_secret=None):
+    """Detach auto scaling groups from load balancers."""
+    aws_profile = utils.get_profile(profile, access_key_id, access_key_secret)
+
+    try:
+        scalinggroup_jobs.detach_load_balancer(aws_profile, name, loadbalancer)
+    except PermissionDenied:
+        msg = "You don't have premission to detach load balancers."
+        raise click.ClickException(msg)
+    except (MissingKey, Non200Response) as error:
+        raise click.ClickException(str(error))
+    except ResourceDoesNotExist as error:
+        raise click.ClickException(str(error))
+    except AwsError as error:
+        raise click.ClickException(str(error))
