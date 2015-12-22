@@ -11,8 +11,6 @@ from ..aws.autoscaling import autoscalinggroup
 from . import availabilityzones as zone_jobs
 from . import launchconfigurations as launchconfig_jobs
 from . import regions as region_jobs
-from . import subnets as subnet_jobs
-from . import vpcs as vpc_jobs
 
 from .exceptions import ResourceAlreadyExists
 from .exceptions import ResourceDoesNotExist

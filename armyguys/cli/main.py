@@ -12,6 +12,7 @@ should be specified in the ``plugins`` dictionary below.
 from .plugincli import PluginCli
 
 from .commands import launchconfigs
+from .commands import loadbalancers
 from .commands import s3buckets
 from .commands import s3files
 from .commands import scalinggroups
@@ -23,6 +24,7 @@ from .commands import zones
 
 plugins = {
     "launchconfigs": launchconfigs,
+    "loadbalancers": loadbalancers,
     "s3buckets": s3buckets,
     "s3files": s3files,
     "scalinggroups": scalinggroups,

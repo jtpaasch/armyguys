@@ -93,3 +93,40 @@ def parse_user_data_files(user_data_files):
     return result
 
 
+def parse_listeners(listeners):
+    result = []
+    allowed_protocols = ["HTTP", "TCP"]
+    if listeners:
+        for record in listeners:
+            listener_parts = record.split(":")
+            if len(listener_parts) != 2:
+                msg = "Bad listener: '" + str(record) + "'. " \
+                      + "Must be PROTOCOL:PORT."
+                raise click.ClickException(msg)
+            protocol = listener_parts[0].strip().upper()
+            port = listener_parts[1].strip()
+            if not protocol:
+                msg = "Empty protocol value: " + str(record)
+                raise click.ClickException(msg)
+            elif not port:
+                msg = "Empty port value: " + str(record)
+                raise click.ClickException(msg)
+            if protocol not in allowed_protocols:
+                click.echo("Protocol must be one of:")
+                click.echo("- HTTP")
+                click.echo("- TCP")
+                msg = "Unrecognized protocol."
+                raise click.ClickException(msg)
+            try:
+                port = int(port)
+            except (TypeError, ValueError):
+                msg = "Port must be an integer, not: " + str(port)
+                raise click.ClickException(msg)
+            if all([protocol, port]):
+                result.append({
+                    "Protocol": protocol,
+                    "LoadBalancerPort": port,
+                    "InstanceProtocol": protocol,
+                    "InstancePort": port,
+                })
+    return result
