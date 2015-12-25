@@ -4,7 +4,7 @@
 
 import click
 
-from ...jobs import autoscalinggroups as scalinggroup_jobs
+from ...jobs import clusters as cluster_jobs
 
 from ...jobs.exceptions import AwsError
 from ...jobs.exceptions import ImproperlyConfigured
@@ -21,12 +21,12 @@ from .. import utils
 
 
 @click.group()
-def scalinggroups():
-    """Manage auto scaling groups."""
+def clusters():
+    """Manage ECS clusters."""
     pass
 
 
-@scalinggroups.command(name="list")
+@clusters.command(name="list")
 @click.option(
     "--profile",
     help="An AWS profile to connect with.")
@@ -36,17 +36,17 @@ def scalinggroups():
 @click.option(
     "--access-key-secret",
     help="An AWS access key secret.")
-def list_auto_scaling_groups(
+def list_clusters(
         profile=None,
         access_key_id=None,
         access_key_secret=None):
-    """List auto scaling groups."""
+    """List ECS clusters."""
     aws_profile = utils.get_profile(profile, access_key_id, access_key_secret)
 
     try:
-        records = scalinggroup_jobs.fetch_all(aws_profile)
+        records = cluster_jobs.fetch_all(aws_profile)
     except PermissionDenied:
-        msg = "You don't have premission to view auto scaling groups."
+        msg = "You don't have premission to view clusters."
         raise click.ClickException(msg)
     except (MissingKey, Non200Response) as error:
         raise click.ClickException(str(error))
@@ -55,15 +55,29 @@ def list_auto_scaling_groups(
 
     if records:
         for record in records:
-            display_name = scalinggroup_jobs.get_display_name(record)
+            display_name = cluster_jobs.get_display_name(record)
             click.echo(display_name)
 
 
-@scalinggroups.command(name="create")
+@clusters.command(name="create")
 @click.argument("name")
 @click.option(
-    "--launch-config",
-    help="A launch configuration.")
+    "--instance-type",
+    help="An EC2 instance type.")
+@click.option(
+    "--key-pair",
+    help="The name of a key pair.")
+@click.option(
+    "--security-group",
+    multiple=True,
+    help="The name or ID of a security group.")
+@click.option(
+    "--instance-profile",
+    help="An instance profile for the EC2 instances.")
+@click.option(
+    "--user-data-file",
+    multiple=True,
+    help="FILEPATH:TYPE, e.g., foo.sh:text/x-shellscript.")
 @click.option(
     "--min-size",
     default=1,
@@ -88,6 +102,10 @@ def list_auto_scaling_groups(
     "--vpc",
     help="A VPC.")
 @click.option(
+    "--tag",
+    multiple=True,
+    help="KEY:VALUE tag.")
+@click.option(
     "--profile",
     help="An AWS profile to connect with.")
 @click.option(
@@ -96,37 +114,50 @@ def list_auto_scaling_groups(
 @click.option(
     "--access-key-secret",
     help="An AWS access key secret.")
-def create_auto_scaling_group(
+def create_cluster(
         name,
-        launch_config,
-        min_size,
-        max_size,
-        desired_size,
+        instance_type=None,
+        key_pair=None,
+        security_group=None,
+        instance_profile=None,
+        user_data_file=None,
+        min_size=None,
+        max_size=None,
+        desired_size=None,
         zone=None,
         subnet=None,
         vpc=None,
+        tag=None,
         profile=None,
         access_key_id=None,
         access_key_secret=None):
-    """Create auto scaling groups."""
+    """Create ECS clusters."""
     aws_profile = utils.get_profile(profile, access_key_id, access_key_secret)
 
-    if not launch_config:
-        raise click.ClickException("Which launch config? Use --launch-config.")
-    
+    user_data_files = utils.parse_user_data_files(user_data_file)
+
+    tags = None
+    if tag:
+        tags = utils.parse_tags(tag)
+
     try:
-        records = scalinggroup_jobs.create(
+        records = cluster_jobs.create(
             aws_profile,
             name,
-            launch_config,
+            instance_type,
+            key_pair,
+            security_group,
+            instance_profile,
+            user_data_files,
             min_size,
             max_size,
             desired_size,
             zone,
             subnet,
-            vpc)
+            vpc,
+            tags)
     except PermissionDenied:
-        msg = "You don't have premission to create auto scaling groups."
+        msg = "You don't have premission to create clusters."
         raise click.ClickException(msg)
     except (MissingKey, Non200Response) as error:
         raise click.ClickException(str(error))
@@ -139,11 +170,11 @@ def create_auto_scaling_group(
 
     if records:
         for record in records:
-            display_name = scalinggroup_jobs.get_display_name(record)
+            display_name = cluster_jobs.get_display_name(record)
             click.echo(display_name)
 
 
-@scalinggroups.command(name="delete")
+@clusters.command(name="delete")
 @click.argument("name")
 @click.option(
     "--profile",
@@ -154,18 +185,18 @@ def create_auto_scaling_group(
 @click.option(
     "--access-key-secret",
     help="An AWS access key secret.")
-def delete_auto_scaling_group(
+def delete_cluster(
         name,
         profile=None,
         access_key_id=None,
         access_key_secret=None):
-    """Delete auto scaling groups."""
+    """Delete ECS clusters."""
     aws_profile = utils.get_profile(profile, access_key_id, access_key_secret)
 
     try:
-        scalinggroup_jobs.delete(aws_profile, name)
+        cluster_jobs.delete(aws_profile, name)
     except PermissionDenied:
-        msg = "You don't have premission to delete auto scaling groups."
+        msg = "You don't have premission to delete clusters."
         raise click.ClickException(msg)
     except (MissingKey, Non200Response) as error:
         raise click.ClickException(str(error))
@@ -177,7 +208,7 @@ def delete_auto_scaling_group(
         raise click.ClickException(str(error))
 
 
-@scalinggroups.command(name="serve")
+@clusters.command(name="serve")
 @click.argument("name")
 @click.argument("loadbalancer")
 @click.option(
@@ -195,11 +226,11 @@ def serve(
         profile=None,
         access_key_id=None,
         access_key_secret=None):
-    """Attach groups to load balancers."""
+    """Attach clusters to load balancers."""
     aws_profile = utils.get_profile(profile, access_key_id, access_key_secret)
 
     try:
-        scalinggroup_jobs.attach_load_balancer(aws_profile, name, loadbalancer)
+        cluster_jobs.attach_load_balancer(aws_profile, name, loadbalancer)
     except PermissionDenied:
         msg = "You don't have premission to attach load balancers."
         raise click.ClickException(msg)
@@ -211,7 +242,7 @@ def serve(
         raise click.ClickException(str(error))
 
 
-@scalinggroups.command(name="unserve")
+@clusters.command(name="unserve")
 @click.argument("name")
 @click.argument("loadbalancer")
 @click.option(
@@ -229,11 +260,11 @@ def unserve(
         profile=None,
         access_key_id=None,
         access_key_secret=None):
-    """Detach groups from load balancers."""
+    """Detach clusters from load balancers."""
     aws_profile = utils.get_profile(profile, access_key_id, access_key_secret)
 
     try:
-        scalinggroup_jobs.detach_load_balancer(aws_profile, name, loadbalancer)
+        clusters_jobs.detach_load_balancer(aws_profile, name, loadbalancer)
     except PermissionDenied:
         msg = "You don't have premission to detach load balancers."
         raise click.ClickException(msg)

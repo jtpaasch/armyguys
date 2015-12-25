@@ -89,7 +89,7 @@ def fetch_by_name(profile, name):
     return data
 
 
-def is_launch_config(profile, name):
+def exists(profile, name):
     """Check if a launch configuration exists.
 
     Args:
@@ -210,7 +210,7 @@ def create(
             The name of an instance profile for the EC2 instances.
 
         user_data_files
-            A list of {"filepath": path, "filetype": type} entries
+            A list of {"filepath": path, "contenttype": type} entries
             to make into a Mime Multi Part Archive for user data.
 
     Returns:
@@ -239,7 +239,7 @@ def create(
             security_groups = sg_ids
 
     # TO DO: Check if the instance profile exists.
-            
+
     # Build the user data.
     user_data = None
     if user_data_files:

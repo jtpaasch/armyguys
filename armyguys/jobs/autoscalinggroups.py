@@ -135,7 +135,7 @@ def polling_fetch(profile, name, max_attempts=10, wait_interval=1):
     return data
 
 
-def polling_is_deleted(profile, name, max_attempts=10, wait_interval=1):
+def polling_is_deleted(profile, name, max_attempts=40, wait_interval=3):
     """Repeatedly check if an auto scaling group is deleted.
 
     Args:
@@ -180,7 +180,8 @@ def create(
         desired_size=1,
         availability_zones=None,
         subnets=None,
-        vpc=None):
+        vpc=None,
+        tags=None):
     """Create an auto scaling group.
 
     Args:
@@ -216,6 +217,9 @@ def create(
             A VPC to launch into. If this is specified without
             any subnets, the auto scaling group will be launched
             into all available subnets.
+
+        tags
+            A list of key/values to add as tags.
 
     Returns:
         The auto scaling group's info.
@@ -256,6 +260,16 @@ def create(
         msg = "Auto scaling group '" + str(name) + "' not created."
         raise ResourceNotCreated(msg)
 
+    # Now tag the auto scaling group.
+    if tags:
+        for tag in tags:
+            params = {}
+            params["profile"] = profile
+            params["autoscaling_group"] = name
+            params["key"] = tag["Key"]
+            params["value"] = tag["Value"]
+            utils.do_request(autoscalinggroup, "tag", params)
+
     # Send back the auto scaling group's info.
     return auto_scaling_group_data
 
@@ -286,7 +300,7 @@ def delete(profile, name):
 
     # Check that it was, in fact, deleted.
     is_deleted = polling_is_deleted(profile, name)
-    autoscaling_group = fetch_by_name(profile, name)
+    auto_scaling_group = fetch_by_name(profile, name)
     if auto_scaling_group:
         msg = "Auto scaling group '" + str(name) + "' was not deleted."
         raise ResourceNotDeleted(msg)
