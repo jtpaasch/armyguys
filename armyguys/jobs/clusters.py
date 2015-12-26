@@ -216,6 +216,7 @@ def create(
         security_groups=None,
         instance_profile=None,
         user_data_files=None,
+        user_data=None,
         min_size=None,
         max_size=None,
         desired_size=None,
@@ -244,6 +245,10 @@ def create(
 
         user_data_files
             A list of {"filepath": path, "contenttype": type} entries
+            to make into a Mime Multi Part Archive for user data.
+
+        user_data
+            A list of {"contents": contents, "contenttype": type} entries
             to make into a Mime Multi Part Archive for user data.
 
         min_size
@@ -295,6 +300,12 @@ def create(
         msg = "An auto scaling group '" + str(auto_scaling_group_name) \
               + "' already exists."
         raise ResourceAlreadyExists(msg)
+
+    # TO DO: Construct the ecs.config file.
+    # TO DO: Upload it to S3.
+    
+    # TO DO: Construct the user data.
+    # TO DO: Pass it to the launch config.
 
     # Create the launch configuration.
     params = {}

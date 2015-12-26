@@ -95,13 +95,16 @@ def do_request(package, method, params, error_handler=None):
     return response
 
 
-def create_mime_multipart_archive(files):
-    """Create a MIME MultiPart Archive of files.
+def create_mime_multipart_archive(files=None, raw_contents=None):
+    """Create a MIME MultiPart Archive of files and file contents.
 
     Args:
 
         files
             A list of {"filepath": path, "contenttype": type} entries.
+
+        raw_contents
+            A list of {"contents": contents, "contenttype": type} entries.
 
     Returns:
         The archive text.
@@ -123,4 +126,19 @@ def create_mime_multipart_archive(files):
                     "Content-Disposition",
                     "attachment; filename=\"%s\"" % (file_path))
                 combined_message.attach(message)
+    if raw_contents:
+        counter = 1
+        for record in raw_contents:
+            filename = "user-data-" + str(counter)
+            contents = record["contents"]
+            content_type = record["contenttype"]
+            message = MIMEText(
+                contents,
+                content_type,
+                default_encoding)
+            message.add_header(
+                "Content-Disposition",
+                "attachment; filename=\"%s\"" % (filename))
+            combined_message.attach(message)
+            counter += 1
     return combined_message.as_string()

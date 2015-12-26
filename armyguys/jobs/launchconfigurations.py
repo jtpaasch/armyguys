@@ -179,7 +179,8 @@ def create(
         security_groups=None,
         public_ip=None,
         instance_profile=None,
-        user_data_files=None):
+        user_data_files=None,
+        user_data=None):
     """Create a launch configuration.
 
     Args:
@@ -213,6 +214,10 @@ def create(
             A list of {"filepath": path, "contenttype": type} entries
             to make into a Mime Multi Part Archive for user data.
 
+        user_data
+            A list of {"contents": content, "contenttype": type} entries
+            to make into a Mime Multi Part Archive for user data.
+
     Returns:
         The security group.
 
@@ -241,12 +246,8 @@ def create(
     # TO DO: Check if the instance profile exists.
 
     # Build the user data.
-    user_data = None
-    if user_data_files:
-        archive = utils.create_mime_multipart_archive(user_data_files)
-        if archive:
-            user_data = archive
-    
+    archive = utils.create_mime_multipart_archive(user_data_files, user_data)
+
     # Now we can create it.
     params = {}
     params["profile"] = profile
@@ -263,8 +264,8 @@ def create(
         params["public_ip"] = True
     else:
         params["public_ip"] = False
-    if user_data:
-        params["user_data"] = user_data
+    if archive:
+        params["user_data"] = archive
     response = utils.do_request(launchconfiguration, "create", params)
 
     # Now check that it exists.

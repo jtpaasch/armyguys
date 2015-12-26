@@ -77,7 +77,11 @@ def list_clusters(
 @click.option(
     "--user-data-file",
     multiple=True,
-    help="FILEPATH:TYPE, e.g., foo.sh:text/x-shellscript.")
+    help="TYPE:FILEPATH, e.g., text/x-shellscript:foo.sh.")
+@click.option(
+    "--user-data",
+    multiple=True,
+    help="TYPE:CONTENTS, e.g., 'text/x-shellscript:#/bin/bash touch logs'")
 @click.option(
     "--min-size",
     default=1,
@@ -121,6 +125,7 @@ def create_cluster(
         security_group=None,
         instance_profile=None,
         user_data_file=None,
+        user_data=None,
         min_size=None,
         max_size=None,
         desired_size=None,
@@ -135,6 +140,7 @@ def create_cluster(
     aws_profile = utils.get_profile(profile, access_key_id, access_key_secret)
 
     user_data_files = utils.parse_user_data_files(user_data_file)
+    user_data = utils.parse_user_data(user_data)
 
     tags = None
     if tag:
@@ -149,6 +155,7 @@ def create_cluster(
             security_group,
             instance_profile,
             user_data_files,
+            user_data,
             min_size,
             max_size,
             desired_size,

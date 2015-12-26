@@ -65,31 +65,72 @@ def parse_user_data_files(user_data_files):
         ]
     if user_data_files:
         for record in user_data_files:
-            record_parts = record.split(":")
+            record_parts = record.split(":", maxsplit=1)
             if len(record_parts) != 2:
-                msg = "'" + str(record) + "' must be FILEPATH:TYPE."
+                msg = "'" + str(record) + "' must be TYPE:FILEPATH."
                 raise click.ClickException(msg)
-            filepath = record_parts[0].strip()
-            filetype = record_parts[1].strip()
-            if all([filepath, filetype]):
-                result.append({"filepath": filepath, "contenttype": filetype})
+            contenttype = record_parts[0].strip()
+            filepath = record_parts[1].strip()
+            if all([filepath, contenttype]):
+                result.append({"filepath": filepath, "contenttype": contenttype})
             elif not filepath:
-                msg = "Missing file path: " + str(record)
+                msg = "Missing file path in: " + str(record)
                 raise click.ClickException(msg)
-            elif not value:
-                msg = "Missing content type: " + str(record)
+            elif not contenttype:
+                msg = "Missing content type in: " + str(record)
                 raise click.ClickException(msg)
             if not os.path.isfile(filepath):
                 msg = "No file '" + str(filepath) + "'."
                 raise click.ClickException(msg)
-            if filetype not in content_types:
-                click.echo("Unknown content type '" + str(filetype) + "'.")
+            if contenttype not in content_types:
+                click.echo("Unknown content type '" + str(contenttype) + "'.")
                 click.echo("Must be one of:")
                 for content_type in content_types:
                     click.echo("- " + str(content_type))
                 msg = "Unknown content type for '" + str(filepath) + "'."
                 raise click.ClickException(msg)
-                
+    return result
+
+
+def parse_user_data(user_data):
+    result = []
+    content_types = [
+        "text/x-include-once-url",
+        "text/x-include-url",
+        "text/cloud-config-archive",
+        "text/upstart-job",
+        "text/cloud-config",
+        "text/part-handler",
+        "text/x-shellscript",
+        "text/cloud-boothook"
+        ]
+    if user_data:
+        for record in user_data:
+            record_parts = record.split(":", maxsplit=1)
+            if len(record_parts) != 2:
+                msg = "'" + str(record) + "' must be TYPE:CONTENTS."
+                raise click.ClickException(msg)
+            contenttype = record_parts[0].strip()
+            contents = record_parts[1].strip()
+            aws_newline = "\n"
+            contents = contents.replace('\\r\\n', aws_newline)
+            contents = contents.replace('\\r', aws_newline)
+            contents = contents.replace('\\n', aws_newline)
+            if all([contents, contenttype]):
+                result.append({"contents": contents, "contenttype": contenttype})
+            elif not contents:
+                msg = "Missing contents in: " + str(record)
+                raise click.ClickException(msg)
+            elif not contenttype:
+                msg = "Missing content type in: " + str(record)
+                raise click.ClickException(msg)
+            if contenttype not in content_types:
+                click.echo("Unknown content type '" + str(contenttype) + "'.")
+                click.echo("Must be one of:")
+                for content_type in content_types:
+                    click.echo("- " + str(content_type))
+                msg = "Unknown content type for '" + str(contents) + "'."
+                raise click.ClickException(msg)
     return result
 
 
