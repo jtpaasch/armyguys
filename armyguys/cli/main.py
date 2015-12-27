@@ -19,6 +19,7 @@ from .commands import s3files
 from .commands import scalinggroups
 from .commands import securitygroups
 from .commands import subnets
+from .commands import taskdefinitions
 from .commands import vpcs
 from .commands import zones
 
@@ -32,6 +33,7 @@ plugins = {
     "scalinggroups": scalinggroups,
     "securitygroups": securitygroups,
     "subnets": subnets,
+    "taskdefinitions": taskdefinitions,
     "vpcs": vpcs,
     "zones": zones,
     }

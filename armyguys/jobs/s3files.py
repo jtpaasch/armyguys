@@ -260,4 +260,4 @@ def delete(profile, bucket, name):
     # Check that it was, in fact, deleted.
     if exists(profile, bucket, name):
         msg = "The file '" + str(name) + "' was not deleted."
-        raise ResourceDoesNotExist(msg)
+        raise ResourceNotDeleted(msg)

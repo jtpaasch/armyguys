@@ -65,17 +65,8 @@ def delete(profile, name):
     return client.deregister_task_definition(**params)
 
 
-def get(profile, family=None, task_definition=None):
-    """Get an ECS task definition.
-
-    If you specify a family, this will return only those task
-    definitions that belong to that family. If you specify a
-    task definition by its full name (i.e., family:revision),
-    this will return only that one task definition. If you
-    specify neither a family nor a task definition, this will
-    return all task definitions from all families.
-
-    Note that this method returns a list of JSON responses.
+def get_arns(profile, family=None):
+    """Get ECS task definition arns.
 
     Args:
 
@@ -85,28 +76,56 @@ def get(profile, family=None, task_definition=None):
         family
             A family of task definitions to get.
 
-        task_definition
-            A task definition to get, specified by its full name,
-            i.e., family:revision.
+    Returns:
+        A list of data returned by boto3.
+
+    """
+    client = boto3client.get("ecs", profile)
+    params = {}
+    if family:
+        params["familyPrefix"] = family
+    return client.list_task_definitions(**params)
+
+
+def get_families(profile, family=None):
+    """Get ECS task definition families.
+
+    Args:
+
+        profile
+            A profile to connect to AWS with.
+
+        family
+            A family of task definitions to get.
 
     Returns:
         A list of data returned by boto3.
 
     """
     client = boto3client.get("ecs", profile)
-    task_definitions = []
-    if task_definition:
-        task_definitions = [task_definition]
-    else:
-        params = {}
-        if family:
-            params["familyPrefix"] = family
-        task_definitions_list = client.list_task_definitions(**params)
-        task_definitions = task_definitions_list["taskDefinitionArns"]
-    results = []
-    for task_definition in task_definitions:
-        params = {}
-        params["taskDefinition"] = task_definition
-        response = client.describe_task_definition(**params)
-        results.append(response)
-    return results
+    params = {}
+    if family:
+        params["familyPrefix"] = family
+    return client.list_task_definition_families(**params)
+
+
+def get(profile, task_definition):
+    """Get an ECS task definition.
+
+    Args:
+
+        profile
+            A profile to connect to AWS with.
+
+        task_definition
+            A task definition to get, specified by its full name,
+            i.e., family:revision.
+
+    Returns:
+        The data returned by boto3.
+
+    """
+    client = boto3client.get("ecs", profile)
+    params = {}
+    params["taskDefinition"] = task_definition
+    return client.describe_task_definition(**params)

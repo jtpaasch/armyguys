@@ -157,6 +157,10 @@ def create_cluster(
     tags = None
     if tag:
         tags = utils.parse_tags(tag)
+
+    if not instance_profile:
+        msg = "Which instance profile? Use --instance-profile."
+        raise click.ClickException(msg)
         
     try:
         records = cluster_jobs.create(
