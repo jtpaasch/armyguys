@@ -7,6 +7,7 @@ import os
 from ..aws.s3 import file as s3file
 
 from .exceptions import FileDoesNotExist
+from .exceptions import ImproperlyConfigured
 from .exceptions import MissingKey
 from .exceptions import ResourceAlreadyExists
 from .exceptions import ResourceDoesNotExist
@@ -48,7 +49,7 @@ def fetch_all(profile, bucket):
         A list of S3 files.
 
     """
-    if not s3buckets.is_bucket(profile, bucket):
+    if not s3buckets.exists(profile, bucket):
         msg = "No bucket '" + str(bucket) + "'."
         raise ResourceDoesNotExist(msg)
 
@@ -78,7 +79,7 @@ def fetch_by_name(profile, bucket, name):
         A list of files with the provided name.
 
     """
-    if not s3buckets.is_bucket(profile, bucket):
+    if not s3buckets.exists(profile, bucket):
         msg = "No bucket '" + str(bucket) + "'."
         raise ResourceDoesNotExist(msg)
 
@@ -95,7 +96,7 @@ def fetch_by_name(profile, bucket, name):
     return [x for x in data if x["Key"] == name]
 
 
-def is_file(profile, bucket, name):
+def exists(profile, bucket, name):
     """Check if a file exists in an S3 bucket.
 
     Args:
@@ -156,7 +157,7 @@ def polling_fetch(profile, bucket, name, max_attempts=10, wait_interval=1):
     return data
 
 
-def create(profile, bucket, name, filepath):
+def create(profile, bucket, name, filepath=None, contents=None):
     """Create an S3 bucket.
 
     Args:
@@ -168,31 +169,45 @@ def create(profile, bucket, name, filepath):
             The name of the bucket you want to create the file in.
 
         name
-            The name you want to give to the bucket.
+            The name you want to give to the file.
 
-        private
-            True if you want it private. False if not.
+        filepath
+            The path to a file. If you provide this, leave
+            the ``filecontents`` parameter blank.
+
+        contents
+            The contents of a file. If you provide this, leave
+            the ``filepath`` parameter blank.
 
     Returns:
-        The newly created bucket's name.
+        Info about the newly created file.
 
     """
     # Make sure the bucket exists.
-    if not s3buckets.is_bucket(profile, bucket):
+    if not s3buckets.exists(profile, bucket):
         msg = "No bucket '" + str(bucket) + "'."
         raise ResourceDoesNotExist(msg)
 
-    # Make sure the file exists.
-    if not os.path.isfile(filepath):
-        msg = "No such file '" + str(filepath) + "'."
-        raise FileDoesNotExist(msg)
+    # Make sure only contents or a filepath are specified.
+    if all([filepath, contents]) or not any([filepath, contents]):
+        msg = "Provide either a file path or its contents, but not both."
+        raise ImproperlyConfigured(msg)
+
+    # Make sure the file exists, if a filepath was specified.
+    if filepath:
+        if not os.path.isfile(filepath):
+            msg = "No such file '" + str(filepath) + "'."
+            raise FileDoesNotExist(msg)
 
     # Now we can create it.
     params = {}
     params["profile"] = profile
     params["bucket"] = bucket
     params["key"] = name
-    params["filepath"] = filepath
+    if filepath:
+        params["filepath"] = filepath
+    elif contents:
+        params["contents"] = contents
     response = utils.do_request(s3file, "create", params)
 
     # Now check that it exists.
@@ -226,12 +241,12 @@ def delete(profile, bucket, name):
 
     """
     # Make sure the bucket exists.
-    if not s3buckets.is_bucket(profile, bucket):
+    if not s3buckets.exists(profile, bucket):
         msg = "No bucket '" + str(bucket) + "'."
         raise ResourceDoesNotExist(msg)
 
     # Make sure the file exists.
-    if not is_file(profile, bucket, name):
+    if not exists(profile, bucket, name):
         msg = "No file '" + str(name) + "'."
         raise ResourceDoesNotExist(msg)
 
@@ -243,6 +258,6 @@ def delete(profile, bucket, name):
     response = utils.do_request(s3file, "delete", params)
 
     # Check that it was, in fact, deleted.
-    if is_file(profile, bucket, name):
+    if exists(profile, bucket, name):
         msg = "The file '" + str(name) + "' was not deleted."
         raise ResourceDoesNotExist(msg)

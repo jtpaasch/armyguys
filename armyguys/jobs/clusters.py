@@ -2,17 +2,25 @@
 
 """Jobs for ECS clusters."""
 
+from base64 import b64encode
 from time import sleep
 
 from botocore.exceptions import ClientError
 
+from ..aws import account
+from ..aws import profile as profile_tools
+
 from ..aws.ecs import cluster
 
+from . import autoscalinggroups as scalinggroup_jobs
 from . import availabilityzones as zone_jobs
 from . import launchconfigurations as launchconfig_jobs
 from . import loadbalancers as loadbalancer_jobs
 from . import regions as region_jobs
+from . import s3buckets as s3bucket_jobs
+from . import s3files as s3file_jobs
 
+from .exceptions import ImproperlyConfigured
 from .exceptions import ResourceAlreadyExists
 from .exceptions import ResourceDoesNotExist
 from .exceptions import ResourceHasDependency
@@ -20,11 +28,59 @@ from .exceptions import ResourceNotCreated
 from .exceptions import ResourceNotDeleted
 from .exceptions import WaitTimedOut
 
-from . import autoscalinggroups as scalinggroup_jobs
-from . import launchconfigurations as launchconfig_jobs
-from . import regions as region_jobs
-
 from . import utils
+
+
+def get_account_id(profile):
+    """Get the account ID for a profile.
+
+    Args:
+
+        profile
+            A profile to connect to AWS with.
+
+    Returns:
+        The account ID.
+
+    """
+    params = {}
+    params["profile"] = profile
+    response = utils.do_request(account, "get", params)
+    data = utils.get_data("User", response)
+    return data['Arn'].split(':')[4]
+
+
+def get_s3_bucket_name(profile):
+    """Get the name of a bucket for this cluster.
+
+    Args:
+
+        profile
+            A profile to connect to AWS with.
+
+    Returns:
+        The bucket name.
+
+    """
+    account_id = get_account_id(profile)
+    region = profile_tools.get_profile_region(profile)
+    bucket_name = "ecs-clusters--" + str(region) + "--" + str(account_id)
+    return bucket_name
+
+
+def get_ecs_config_in_s3(cluster):
+    """Get the name of the ECS config file in S3.
+
+    Args:
+
+        cluster
+            The name of the cluster it's for.
+
+    Returns:
+        The name of the file in S3, minus the bucket.
+
+    """
+    return str(cluster) + "/ecs.config"
 
 
 def get_auto_scaling_group_name(cluster):
@@ -223,7 +279,10 @@ def create(
         availability_zones=None,
         subnets=None,
         vpc=None,
-        tags=None):
+        tags=None,
+        dockerhub_email=None,
+        dockerhub_username=None,
+        dockerhub_password=None):
     """Create an ECS cluster.
 
     Args:
@@ -272,17 +331,23 @@ def create(
         tags
             A list of key/values to add as tags.
 
+        dockerhub_email
+            An email address for a Docker Hub account.
+
+        dockerhub_username
+            A username for a Docker Hub account.
+
+        dockerhub_password
+            A password for a Docker Hub account.
+
     Returns:
         The cluster's info.
 
     """
     auto_scaling_group_name = get_auto_scaling_group_name(name)
     launch_config_name = get_launch_config_name(name)
-
-    # Add a tag indicating which ECS cluster this is all for.
-    if not tags:
-        tags = []
-    tags.append({"Key": "ECS Cluster", "Value": name})
+    s3_bucket_name = get_s3_bucket_name(profile)
+    ecs_config_in_s3 = get_ecs_config_in_s3(name)
 
     # Make sure the cluster doesn't already exist.
     if exists(profile, name):
@@ -301,11 +366,64 @@ def create(
               + "' already exists."
         raise ResourceAlreadyExists(msg)
 
-    # TO DO: Construct the ecs.config file.
-    # TO DO: Upload it to S3.
-    
-    # TO DO: Construct the user data.
-    # TO DO: Pass it to the launch config.
+    # We need all Docker Hub credentials, if any.
+    dockerhub_credentials = [
+        dockerhub_email,
+        dockerhub_username,
+        dockerhub_password]
+    if any(dockerhub_credentials) and not all(dockerhub_credentials):
+        msg = "Docker Hub requires an email, username, and password."
+        raise ImproperlyConfigured(msg)
+
+    # Construct the authentication information.
+    dockercfg = None
+    if all(dockerhub_credentials):
+        auth_data = '{"https://index.docker.io/v1/":{' \
+                    + '"username":"' \
+                    + str(dockerhub_username) \
+                    + '","password":"' \
+                    + str(dockerhub_password) \
+                    + '","email":"' \
+                    + str(dockerhub_email) \
+                    + '"}}'
+
+    # Construct the ecs.config file.
+    ecs_config = "ECS_CLUSTER=" + str(name) + "\n"
+    if auth_data:
+        ecs_config += "ECS_ENGINE_AUTH_TYPE=docker\n"
+        ecs_config += "ECS_ENGINE_AUTH_DATA=" + str(auth_data) + "\n"
+
+    # Construct a script that downloads it.
+    ecs_config_download_script = "#!/bin/bash\n" \
+                                 + "yum install -y aws-cli\n" \
+                                 + "aws s3 cp s3://" \
+                                 + s3_bucket_name \
+                                 + "/" + ecs_config_in_s3 \
+                                 + " /etc/ecs/ecs.config\n"
+
+    # Add that script to the user data.
+    if not user_data:
+        user_data = []
+    user_data.append({
+        "contenttype": "text/x-shellscript",
+        "contents": ecs_config_download_script
+        })
+
+    # Create an S3 bucket for this cluster, if it doesn't already exist.
+    if not s3bucket_jobs.exists(profile, s3_bucket_name):
+        s3bucket_jobs.create(profile, s3_bucket_name, private=True)
+
+    # Upload the ecs.config file to S3.
+    s3file_jobs.create(
+        profile,
+        bucket=s3_bucket_name,
+        name=ecs_config_in_s3,
+        contents=ecs_config)
+
+    # Add a tag indicating which cluster this all belongs to.
+    if not tags:
+        tags = []
+    tags.append({"Key": "ECS Cluster", "Value": name})
 
     # Create the launch configuration.
     params = {}
@@ -316,6 +434,7 @@ def create(
     params["key_pair"] = key_pair
     params["instance_profile"] = instance_profile
     params["user_data_files"] = user_data_files
+    params["user_data"] = user_data
     params["security_groups"] = security_groups
     params["public_ip"] = True
     launchconfig_jobs.create(**params)
@@ -353,7 +472,7 @@ def create(
     if not cluster_data:
         msg = "Cluster '" + str(name) + "' not created."
         raise ResourceNotCreated(msg)    
-    
+
     # Send back the cluster's info.
     return cluster_data
 
@@ -372,12 +491,18 @@ def delete(profile, name):
     """
     auto_scaling_group_name = get_auto_scaling_group_name(name)
     launch_config_name = get_launch_config_name(name)
+    s3_bucket_name = get_s3_bucket_name(profile)
+    ecs_config_in_s3 = get_ecs_config_in_s3(name)
 
     # Make sure the cluster exists before we try to delete it.
     if not exists(profile, name):
         msg = "No cluster '" + str(name) + "'."
         raise ResourceDoesNotExist(msg)
 
+    # If there's an ECS config file in S3, delete it.
+    if s3file_jobs.exists(profile, s3_bucket_name, ecs_config_in_s3):
+        s3file_jobs.delete(profile, s3_bucket_name, ecs_config_in_s3)
+    
     # If there's an auto scaling group, delete it.
     if scalinggroup_jobs.exists(profile, auto_scaling_group_name):
         scalinggroup_jobs.delete(profile, auto_scaling_group_name)
@@ -385,7 +510,7 @@ def delete(profile, name):
     # If there's a launch config, delete it.
     if launchconfig_jobs.exists(profile, launch_config_name):
         launchconfig_jobs.delete(profile, launch_config_name)
-
+        
     # Now try to delete the cluster.
     params = {}
     params["profile"] = profile

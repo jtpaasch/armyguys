@@ -89,7 +89,7 @@ def fetch_beanstalk_bucket(profile):
     return data
 
 
-def is_bucket(profile, name):
+def exists(profile, name):
     """Check if a bucket exists.
 
     Args:
@@ -163,7 +163,7 @@ def create(profile, name, private=None):
 
     """
     # Make sure the bucket doesn't already exist.
-    if is_bucket(profile, name):
+    if exists(profile, name):
         msg = "The bucket '" + str(name) + "' already exists."
         raise ResourceAlreadyExists(msg)
     

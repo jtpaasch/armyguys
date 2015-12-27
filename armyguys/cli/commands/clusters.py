@@ -81,7 +81,7 @@ def list_clusters(
 @click.option(
     "--user-data",
     multiple=True,
-    help="TYPE:CONTENTS, e.g., 'text/x-shellscript:#/bin/bash touch logs'")
+    help="TYPE:CONTENTS, e.g., 'text/x-shellscript:#/bin/bash \n touch logs'")
 @click.option(
     "--min-size",
     default=1,
@@ -110,6 +110,15 @@ def list_clusters(
     multiple=True,
     help="KEY:VALUE tag.")
 @click.option(
+    "--dockerhub-email",
+    help="Email for a Docker Hub account.")
+@click.option(
+    "--dockerhub-username",
+    help="Username for a Docker Hub account.")
+@click.option(
+    "--dockerhub-password",
+    help="Password for a Docker Hub account.")
+@click.option(
     "--profile",
     help="An AWS profile to connect with.")
 @click.option(
@@ -133,6 +142,9 @@ def create_cluster(
         subnet=None,
         vpc=None,
         tag=None,
+        dockerhub_email=None,
+        dockerhub_username=None,
+        dockerhub_password=None,
         profile=None,
         access_key_id=None,
         access_key_secret=None):
@@ -145,7 +157,7 @@ def create_cluster(
     tags = None
     if tag:
         tags = utils.parse_tags(tag)
-
+        
     try:
         records = cluster_jobs.create(
             aws_profile,
@@ -162,7 +174,10 @@ def create_cluster(
             zone,
             subnet,
             vpc,
-            tags)
+            tags,
+            dockerhub_email,
+            dockerhub_username,
+            dockerhub_password)
     except PermissionDenied:
         msg = "You don't have premission to create clusters."
         raise click.ClickException(msg)

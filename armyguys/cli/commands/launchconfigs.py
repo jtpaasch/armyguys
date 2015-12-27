@@ -87,7 +87,7 @@ def list_launch_configs(
 @click.option(
     "--user-data",
     multiple=True,
-    help="TYPE:CONTENTS, e.g., 'text/x-shellscript:#/bin/bash touch logs'")
+    help="TYPE:CONTENTS, e.g., 'text/x-shellscript:#/bin/bash \n touch logs'")
 @click.option(
     "--profile",
     help="An AWS profile to connect with.")
@@ -114,7 +114,7 @@ def create_launch_config(
     aws_profile = utils.get_profile(profile, access_key_id, access_key_secret)
 
     user_data_files = utils.parse_user_data_files(user_data_file)
-    user_data_contents = utils.parse_user_data(user_data)
+    user_data = utils.parse_user_data(user_data)
 
     try:
         records = launchconfig_jobs.create(
@@ -127,7 +127,7 @@ def create_launch_config(
             public_ip=public_ip,
             instance_profile=instance_profile,
             user_data_files=user_data_files,
-            user_data=user_data_contents)
+            user_data=user_data)
     except PermissionDenied:
         msg = "You don't have premission to create launch configurations."
         raise click.ClickException(msg)
