@@ -44,7 +44,7 @@ def list_launch_configs(
     try:
         records = launchconfig_jobs.fetch_all(aws_profile)
     except PermissionDenied:
-        msg = "You don't have premission to view launch configurations."
+        msg = "You don't have permission to view launch configurations."
         raise click.ClickException(msg)
     except (MissingKey, Non200Response) as error:
         raise click.ClickException(str(error))
@@ -129,7 +129,7 @@ def create_launch_config(
             user_data_files=user_data_files,
             user_data=user_data)
     except PermissionDenied:
-        msg = "You don't have premission to create launch configurations."
+        msg = "You don't have permission to create launch configurations."
         raise click.ClickException(msg)
     except (MissingKey, Non200Response) as error:
         raise click.ClickException(str(error))
@@ -166,7 +166,7 @@ def delete_launch_config(
     try:
         launchconfig_jobs.delete(aws_profile, name)
     except PermissionDenied:
-        msg = "You don't have premission to delete launch configurations."
+        msg = "You don't have permission to delete launch configurations."
         raise click.ClickException(msg)
     except (MissingKey, Non200Response) as error:
         raise click.ClickException(str(error))

@@ -18,8 +18,10 @@ from .commands import s3buckets
 from .commands import s3files
 from .commands import scalinggroups
 from .commands import securitygroups
+from .commands import services
 from .commands import subnets
 from .commands import taskdefinitions
+from .commands import tasks
 from .commands import vpcs
 from .commands import zones
 
@@ -32,8 +34,10 @@ plugins = {
     "s3files": s3files,
     "scalinggroups": scalinggroups,
     "securitygroups": securitygroups,
+    "services": services,
     "subnets": subnets,
     "taskdefinitions": taskdefinitions,
+    "tasks": tasks,
     "vpcs": vpcs,
     "zones": zones,
     }

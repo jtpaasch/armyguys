@@ -45,7 +45,7 @@ def list_task_definitions(
     try:
         records = taskdef_jobs.fetch_all(aws_profile)
     except PermissionDenied:
-        msg = "You don't have premission to view task definitions."
+        msg = "You don't have permission to view task definitions."
         raise click.ClickException(msg)
     except (MissingKey, Non200Response) as error:
         raise click.ClickException(str(error))
@@ -98,7 +98,7 @@ def create_task_definition(
     try:
         record = taskdef_jobs.create(aws_profile, filepath, contents)
     except PermissionDenied:
-        msg = "You don't have premission to create task definitions."
+        msg = "You don't have permission to create task definitions."
         raise click.ClickException(msg)
     except (MissingKey, Non200Response) as error:
         raise click.ClickException(str(error))
@@ -134,7 +134,7 @@ def delete_task_definition(
     try:
         taskdef_jobs.delete(aws_profile, name)
     except PermissionDenied:
-        msg = "You don't have premission to delete task definitions."
+        msg = "You don't have permission to delete task definitions."
         raise click.ClickException(msg)
     except (MissingKey, Non200Response) as error:
         raise click.ClickException(str(error))

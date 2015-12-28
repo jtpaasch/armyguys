@@ -40,7 +40,7 @@ def list_vpcs(
     try:
         vpcs = vpc_jobs.fetch_all(aws_profile)
     except PermissionDenied:
-        msg = "You don't have premission to view VPCs."
+        msg = "You don't have permission to view VPCs."
         raise click.ClickException(msg)
     except (MissingKey, Non200Response) as error:
         raise click.ClickException(str(error))

@@ -111,8 +111,8 @@ def delete(profile, service, cluster):
     return client.delete_service(**params)
 
 
-def get(profile, cluster, service=None):
-    """Get a list of all ECS services in a cluster.
+def get_arns(profile, cluster):
+    """Get a list of all ECS service ARNs in a cluster.
 
     Args:
 
@@ -122,27 +122,36 @@ def get(profile, cluster, service=None):
         cluster
             The name of a cluster.
 
-        service
-            The name of a service to get. If ommitted,
-            all services in the cluster are returned.
-
-
     Returns:
-        The JSON response returned by boto3.
+        The data returned by boto3.
 
     """
     client = boto3client.get("ecs", profile)
-    if service:
-        service_arns = [service]
-    else:
-        params = {}
-        params["cluster"] = cluster
-        services = client.list_services(**params)
-        service_arns = services["serviceArns"]
-    result = []
-    if service_arns:
-        params = {}
-        params["cluster"] = cluster
-        params["services"] = service_arns
-        result = client.describe_services(**params)
-    return result
+    params = {}
+    params["cluster"] = cluster
+    return client.list_services(**params)
+
+
+def get(profile, cluster, services):
+    """Get ECS services in a cluster.
+
+    Args:
+
+        profile
+            A profile to connect to AWS with.
+
+        cluster
+            The name of a cluster.
+
+        services
+            A list of services to fetch info for.
+
+    Returns:
+        The data returned by boto3.
+
+    """
+    client = boto3client.get("ecs", profile)
+    params = {}
+    params["cluster"] = cluster
+    params["services"] = services
+    return client.describe_services(**params)

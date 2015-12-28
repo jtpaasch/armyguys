@@ -46,7 +46,7 @@ def list_clusters(
     try:
         records = cluster_jobs.fetch_all(aws_profile)
     except PermissionDenied:
-        msg = "You don't have premission to view clusters."
+        msg = "You don't have permission to view clusters."
         raise click.ClickException(msg)
     except (MissingKey, Non200Response) as error:
         raise click.ClickException(str(error))
@@ -183,7 +183,7 @@ def create_cluster(
             dockerhub_username,
             dockerhub_password)
     except PermissionDenied:
-        msg = "You don't have premission to create clusters."
+        msg = "You don't have permission to create clusters."
         raise click.ClickException(msg)
     except (MissingKey, Non200Response) as error:
         raise click.ClickException(str(error))
@@ -222,7 +222,7 @@ def delete_cluster(
     try:
         cluster_jobs.delete(aws_profile, name)
     except PermissionDenied:
-        msg = "You don't have premission to delete clusters."
+        msg = "You don't have permission to delete clusters."
         raise click.ClickException(msg)
     except (MissingKey, Non200Response) as error:
         raise click.ClickException(str(error))
@@ -258,7 +258,7 @@ def serve(
     try:
         cluster_jobs.attach_load_balancer(aws_profile, name, loadbalancer)
     except PermissionDenied:
-        msg = "You don't have premission to attach load balancers."
+        msg = "You don't have permission to attach load balancers."
         raise click.ClickException(msg)
     except (MissingKey, Non200Response) as error:
         raise click.ClickException(str(error))
@@ -292,7 +292,7 @@ def unserve(
     try:
         clusters_jobs.detach_load_balancer(aws_profile, name, loadbalancer)
     except PermissionDenied:
-        msg = "You don't have premission to detach load balancers."
+        msg = "You don't have permission to detach load balancers."
         raise click.ClickException(msg)
     except (MissingKey, Non200Response) as error:
         raise click.ClickException(str(error))

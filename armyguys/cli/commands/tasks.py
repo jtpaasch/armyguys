@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 
-"""Commands for managing load balancers."""
+"""Commands for managing ECS tasks."""
 
 import click
 
-from ...jobs import loadbalancers as loadbalancer_jobs
+from ...jobs import tasks as task_jobs
 
 from ...jobs.exceptions import AwsError
-from ...jobs.exceptions import ImproperlyConfigured
+from ...jobs.exceptions import FileDoesNotExist
 from ...jobs.exceptions import MissingKey
 from ...jobs.exceptions import Non200Response
 from ...jobs.exceptions import PermissionDenied
@@ -15,18 +15,18 @@ from ...jobs.exceptions import ResourceAlreadyExists
 from ...jobs.exceptions import ResourceDoesNotExist
 from ...jobs.exceptions import ResourceNotCreated
 from ...jobs.exceptions import ResourceNotDeleted
-from ...jobs.exceptions import WaitTimedOut
 
 from .. import utils
 
 
 @click.group()
-def loadbalancers():
-    """Manage load balancers."""
+def tasks():
+    """Manage ECS tasks."""
     pass
 
 
-@loadbalancers.command(name="list")
+@tasks.command(name="list")
+@click.argument("cluster")
 @click.option(
     "--profile",
     help="An AWS profile to connect with.")
@@ -36,54 +36,44 @@ def loadbalancers():
 @click.option(
     "--access-key-secret",
     help="An AWS access key secret.")
-def list_load_balancers(
+def list_tasks(
+        cluster,
         profile=None,
         access_key_id=None,
         access_key_secret=None):
-    """List load balancers."""
+    """List ECS tasks."""
     aws_profile = utils.get_profile(profile, access_key_id, access_key_secret)
 
     try:
-        records = loadbalancer_jobs.fetch_all(aws_profile)
+        records = task_jobs.fetch_all(aws_profile, cluster)
     except PermissionDenied:
-        msg = "You don't have permission to view load balancers."
+        msg = "You don't have permission to view tasks."
         raise click.ClickException(msg)
     except (MissingKey, Non200Response) as error:
         raise click.ClickException(str(error))
     except AwsError as error:
         raise click.ClickException(str(error))
+    except ResourceDoesNotExist as error:
+        raise click.ClickException(str(error))
 
     if records:
         for record in records:
-            display_name = loadbalancer_jobs.get_display_name(record)
+            display_name = task_jobs.get_display_name(record)
             click.echo(display_name)
 
 
-@loadbalancers.command(name="create")
+@tasks.command(name="create")
 @click.argument("name")
 @click.option(
-    "--listen",
-    multiple=True,
-    help="PROTOCOL:PORT")
+    "--cluster",
+    help="A cluster.")
 @click.option(
-    "--security-group",
-    multiple=True,
-    help="A security group.")
+    "--task-definition",
+    help="FAMILY:REVISION.")
 @click.option(
-    "--zone",
-    multiple=True,
-    help="An availability zone.")
-@click.option(
-    "--subnet",
-    multiple=True,
-    help="A subnet.")
-@click.option(
-    "--vpc",
-    help="A VPC.")
-@click.option(
-    "--tag",
-    multiple=True,
-    help="KEY:VALUE")
+    "--count",
+    type=int,
+    help="Number of copies of the task to run.")
 @click.option(
     "--profile",
     help="An AWS profile to connect with.")
@@ -93,34 +83,33 @@ def list_load_balancers(
 @click.option(
     "--access-key-secret",
     help="An AWS access key secret.")
-def create_load_balancer(
+def create_task(
         name,
-        listen=None,
-        security_group=None,
-        zone=None,
-        subnet=None,
-        vpc=None,
-        tag=None,
+        cluster=None,
+        task_definition=None,
+        count=None,
         profile=None,
         access_key_id=None,
         access_key_secret=None):
-    """Create load balancers."""
+    """Create ECS tasks."""
     aws_profile = utils.get_profile(profile, access_key_id, access_key_secret)
 
-    tags = utils.parse_tags(tag)
-    listeners = utils.parse_listeners(listen)
-    
+    if not cluster:
+        msg = "Which cluster? Use --cluster."
+        raise click.ClickException(msg)
+    if not task_definition:
+        msg = "Which task definition? Use --task-definition."
+        raise click.ClickException(msg)
+
     try:
-        records = loadbalancer_jobs.create(
+        records = task_jobs.create(
             aws_profile,
             name,
-            listeners,
-            security_group,
-            zone,
-            subnet,
-            vpc)
+            cluster,
+            task_definition,
+            count)
     except PermissionDenied:
-        msg = "You don't have permission to create load balancers."
+        msg = "You don't have permission to create tasks."
         raise click.ClickException(msg)
     except (MissingKey, Non200Response) as error:
         raise click.ClickException(str(error))
@@ -131,12 +120,15 @@ def create_load_balancer(
 
     if records:
         for record in records:
-            display_name = loadbalancer_jobs.get_display_name(record)
+            display_name = task_jobs.get_display_name(record)
             click.echo(display_name)
 
 
-@loadbalancers.command(name="delete")
+@tasks.command(name="delete")
 @click.argument("name")
+@click.option(
+    "--cluster",
+    help="A cluster.")
 @click.option(
     "--profile",
     help="An AWS profile to connect with.")
@@ -146,24 +138,27 @@ def create_load_balancer(
 @click.option(
     "--access-key-secret",
     help="An AWS access key secret.")
-def delete_load_balancer(
+def delete_task(
         name,
+        cluster=None,
         profile=None,
         access_key_id=None,
         access_key_secret=None):
-    """Delete load balancers."""
+    """Delete ECS tasks."""
     aws_profile = utils.get_profile(profile, access_key_id, access_key_secret)
 
+    if not cluster:
+        msg = "Which cluster? Use --cluster."
+        raise click.ClickException(msg)
+    
     try:
-        loadbalancer_jobs.delete(aws_profile, name)
+        task_jobs.delete(aws_profile, cluster, name)
     except PermissionDenied:
-        msg = "You don't have permission to delete load balancers."
+        msg = "You don't have permission to delete task definitions."
         raise click.ClickException(msg)
     except (MissingKey, Non200Response) as error:
         raise click.ClickException(str(error))
     except AwsError as error:
         raise click.ClickException(str(error))
-    except (ResourceDoesNotExist, ResourceNotDeleted) as error:
-        raise click.ClickException(str(error))
-    except WaitTimedOut as error:
+    except (ResourceDoesNotExist, ResourceAlreadyExists, ResourceNotDeleted) as error:
         raise click.ClickException(str(error))

@@ -55,7 +55,7 @@ def list_subnets(
     try:
         records = func(**params)
     except PermissionDenied:
-        msg = "You don't have premission to view subnets."
+        msg = "You don't have permission to view subnets."
         raise click.ClickException(msg)
     except (MissingKey, Non200Response) as error:
         raise click.ClickException(str(error))
@@ -120,7 +120,7 @@ def create_subnet(
     try:
         records = subnet_jobs.create(aws_profile, name, vpc, cidr, zone, tags)
     except PermissionDenied:
-        msg = "You don't have premission to create subnets."
+        msg = "You don't have permission to create subnets."
         raise click.ClickException(msg)
     except (MissingKey, Non200Response) as error:
         raise click.ClickException(str(error))
@@ -157,7 +157,7 @@ def delete_subnet(
     try:
         records = subnet_jobs.delete(aws_profile, name)
     except PermissionDenied:
-        msg = "You don't have premission to delete subnets."
+        msg = "You don't have permission to delete subnets."
         raise click.ClickException(msg)
     except (MissingKey, Non200Response) as error:
         raise click.ClickException(str(error))

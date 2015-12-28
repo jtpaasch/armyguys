@@ -5,7 +5,7 @@
 from .. import client as boto3client
 
 
-def create(profile, cluster, task_definition):
+def create(profile, cluster, task_definition, started_by=None, count=None):
     """Run a task in a cluster.
 
     Args:
@@ -19,6 +19,12 @@ def create(profile, cluster, task_definition):
         task_definition
             The full name of the task to run, i.e., family:revision.
 
+        started_by
+            A string to help identify the task later.
+
+        count
+            The number of copies of the task to run.
+
     Returns:
         The data returned by boto3.
 
@@ -27,6 +33,10 @@ def create(profile, cluster, task_definition):
     params = {}
     params["cluster"] = cluster
     params["taskDefinition"] = task_definition
+    if started_by:
+        params["startedBy"] = started_by
+    if count:
+        params["count"] = count
     return client.run_task(**params)
 
 
@@ -55,8 +65,8 @@ def delete(profile, cluster, task_id):
     return client.stop_task(**params)
 
 
-def get(profile, cluster, task=None):
-    """Get all ECS tasks in a cluster, or a specific one.
+def get_arns(profile, cluster, started_by=None):
+    """Get all ECS task ARNs for a cluster.
 
     Args:
 
@@ -66,9 +76,8 @@ def get(profile, cluster, task=None):
         cluster
             The name of a cluster.
 
-        task
-            The ID or Amazon ARN you want to get. If this is omitted,
-            all tasks are returned.
+        started_by
+            Get tasks started with this value.
 
     Returns:
         The data returned by boto3.
@@ -76,16 +85,33 @@ def get(profile, cluster, task=None):
     """
     result = None
     client = boto3client.get("ecs", profile)
-    if task:
-        task_arns = [task]
-    else:
-        params = {}
-        params["cluster"] = cluster
-        tasks = client.list_tasks(**params)
-        task_arns = tasks["taskArns"]
     params = {}
     params["cluster"] = cluster
-    if task_arns:
-        params["tasks"] = task_arns
-        result = client.describe_tasks(**params)
-    return result
+    if started_by:
+        params["startedBy"] = started_by
+    return client.list_tasks(**params)
+
+
+def get(profile, cluster, tasks):
+    """Get the info for tasks in a cluster.
+
+    Args:
+
+        profile
+            A profile to connect to AWS with.
+
+        cluster
+            The name of a cluster.
+
+        tasks
+            The list of task ARNs to fetch.
+
+    Returns:
+        The data returned by boto3.
+
+    """
+    client = boto3client.get("ecs", profile)
+    params = {}
+    params["cluster"] = cluster
+    params["tasks"] = tasks
+    return client.describe_tasks(**params)

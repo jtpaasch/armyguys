@@ -47,7 +47,7 @@ def list_s3_files(
     try:
         files = s3_jobs.fetch_all(aws_profile, bucket)
     except PermissionDenied:
-        msg = "You don't have premission to view S3 files."
+        msg = "You don't have permission to view S3 files."
         raise click.ClickException(msg)
     except (MissingKey, Non200Response) as error:
         raise click.ClickException(str(error))
@@ -88,7 +88,7 @@ def create_s3_file(
     try:
         files = s3_jobs.create(aws_profile, bucket, name, filepath)
     except PermissionDenied:
-        msg = "You don't have premission to create S3 files."
+        msg = "You don't have permission to create S3 files."
         raise click.ClickException(msg)
     except (MissingKey, Non200Response) as error:
         raise click.ClickException(str(error))
@@ -127,7 +127,7 @@ def delete_s3_file(
     try:
         s3_jobs.delete(aws_profile, bucket, name)
     except PermissionDenied:
-        msg = "You don't have premission to delete S3 files."
+        msg = "You don't have permission to delete S3 files."
         raise click.ClickException(msg)
     except (MissingKey, Non200Response) as error:
         raise click.ClickException(str(error))

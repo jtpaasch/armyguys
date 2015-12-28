@@ -46,7 +46,7 @@ def list_auto_scaling_groups(
     try:
         records = scalinggroup_jobs.fetch_all(aws_profile)
     except PermissionDenied:
-        msg = "You don't have premission to view auto scaling groups."
+        msg = "You don't have permission to view auto scaling groups."
         raise click.ClickException(msg)
     except (MissingKey, Non200Response) as error:
         raise click.ClickException(str(error))
@@ -126,7 +126,7 @@ def create_auto_scaling_group(
             subnet,
             vpc)
     except PermissionDenied:
-        msg = "You don't have premission to create auto scaling groups."
+        msg = "You don't have permission to create auto scaling groups."
         raise click.ClickException(msg)
     except (MissingKey, Non200Response) as error:
         raise click.ClickException(str(error))
@@ -165,7 +165,7 @@ def delete_auto_scaling_group(
     try:
         scalinggroup_jobs.delete(aws_profile, name)
     except PermissionDenied:
-        msg = "You don't have premission to delete auto scaling groups."
+        msg = "You don't have permission to delete auto scaling groups."
         raise click.ClickException(msg)
     except (MissingKey, Non200Response) as error:
         raise click.ClickException(str(error))
@@ -201,7 +201,7 @@ def serve(
     try:
         scalinggroup_jobs.attach_load_balancer(aws_profile, name, loadbalancer)
     except PermissionDenied:
-        msg = "You don't have premission to attach load balancers."
+        msg = "You don't have permission to attach load balancers."
         raise click.ClickException(msg)
     except (MissingKey, Non200Response) as error:
         raise click.ClickException(str(error))
@@ -235,7 +235,7 @@ def unserve(
     try:
         scalinggroup_jobs.detach_load_balancer(aws_profile, name, loadbalancer)
     except PermissionDenied:
-        msg = "You don't have premission to detach load balancers."
+        msg = "You don't have permission to detach load balancers."
         raise click.ClickException(msg)
     except (MissingKey, Non200Response) as error:
         raise click.ClickException(str(error))

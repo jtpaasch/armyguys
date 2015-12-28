@@ -44,7 +44,7 @@ def list_security_groups(
     try:
         security_groups = sg_jobs.fetch_all(aws_profile)
     except PermissionDenied:
-        msg = "You don't have premission to view security groups."
+        msg = "You don't have permission to view security groups."
         raise click.ClickException(msg)
     except (MissingKey, Non200Response) as error:
         raise click.ClickException(str(error))
@@ -92,7 +92,7 @@ def create_security_group(
     try:
         security_groups = sg_jobs.create(aws_profile, name, vpc, tags)
     except PermissionDenied:
-        msg = "You don't have premission to create security groups."
+        msg = "You don't have permission to create security groups."
         raise click.ClickException(msg)
     except (MissingKey, Non200Response) as error:
         raise click.ClickException(str(error))
@@ -129,7 +129,7 @@ def delete_security_group(
     try:
         security_groups = sg_jobs.delete(aws_profile, name)
     except PermissionDenied:
-        msg = "You don't have premission to delete security groups."
+        msg = "You don't have permission to delete security groups."
         raise click.ClickException(msg)
     except (MissingKey, Non200Response) as error:
         raise click.ClickException(str(error))

@@ -40,7 +40,7 @@ def list_availability_zones(
     try:
         zones = zone_jobs.fetch_all(aws_profile)
     except PermissionDenied:
-        msg = "You don't have premission to view availability zones."
+        msg = "You don't have permission to view availability zones."
         raise click.ClickException(msg)
     except (MissingKey, Non200Response) as error:
         raise click.ClickException(str(error))
