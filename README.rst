@@ -1,7 +1,7 @@
 Army Guys
 =========
 
-Run Docker containers in Amazon's cloud.xsy
+Run Docker containers in Amazon's cloud.
 
 This is in active development, but here's the basic rundown.
 
