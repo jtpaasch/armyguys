@@ -2,7 +2,7 @@
 
 """Utilities for working with IAM instance profiles."""
 
-from . import client as boto3client
+from .. import client as boto3client
 
 
 def create(profile, name):

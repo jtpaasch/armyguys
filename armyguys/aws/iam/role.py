@@ -4,7 +4,7 @@
 
 import json
 from os import path
-from . import client as boto3client
+from .. import client as boto3client
 
 
 def create(profile, name, contents=None, filepath=None):
@@ -71,7 +71,7 @@ def get(profile):
             A profile to connect to AWS with.
 
     Returns:
-        The JSON response returned by boto3.
+        The data returned by boto3
 
     """
     client = boto3client.get("iam", profile)

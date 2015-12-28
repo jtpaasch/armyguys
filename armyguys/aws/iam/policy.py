@@ -4,7 +4,7 @@
 
 import json
 from os import path
-from . import client as boto3client
+from .. import client as boto3client
 
 
 def create(profile, name, contents=None, filepath=None):

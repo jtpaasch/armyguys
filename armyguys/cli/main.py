@@ -14,6 +14,7 @@ from .plugincli import PluginCli
 from .commands import clusters
 from .commands import launchconfigs
 from .commands import loadbalancers
+from .commands import roles
 from .commands import s3buckets
 from .commands import s3files
 from .commands import scalinggroups
@@ -30,6 +31,7 @@ plugins = {
     "clusters": clusters,
     "launchconfigs": launchconfigs,
     "loadbalancers": loadbalancers,
+    "roles": roles,
     "s3buckets": s3buckets,
     "s3files": s3files,
     "scalinggroups": scalinggroups,

@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 
-"""Commands for managing S3 files."""
+"""Commands for managing IAM roles."""
 
 import click
 
-from ...jobs import s3files as s3_jobs
+from ...jobs import roles as role_jobs
 
 from ...jobs.exceptions import AwsError
 from ...jobs.exceptions import FileDoesNotExist
@@ -20,13 +20,12 @@ from .. import utils
 
 
 @click.group()
-def s3files():
-    """Manage S3 files."""
+def roles():
+    """Manage IAM roles."""
     pass
 
 
-@s3files.command(name="list")
-@click.argument("bucket")
+@roles.command(name="list")
 @click.option(
     "--profile",
     help="An AWS profile to connect with.")
@@ -36,18 +35,17 @@ def s3files():
 @click.option(
     "--access-key-secret",
     help="An AWS access key secret.")
-def list_s3_files(
-        bucket,
+def list_roles(
         profile=None,
         access_key_id=None,
         access_key_secret=None):
-    """List S3 files."""
+    """List IAM roles."""
     aws_profile = utils.get_profile(profile, access_key_id, access_key_secret)
 
     try:
-        files = s3_jobs.fetch_all(aws_profile, bucket)
+        records = role_jobs.fetch_all(aws_profile)
     except PermissionDenied:
-        msg = "You don't have permission to view S3 files."
+        msg = "You don't have permission to view roles."
         raise click.ClickException(msg)
     except (MissingKey, Non200Response) as error:
         raise click.ClickException(str(error))
@@ -56,15 +54,20 @@ def list_s3_files(
     except ResourceDoesNotExist as error:
         raise click.ClickException(str(error))
 
-    if files:
-        for record in files:
-            display_name = s3_jobs.get_display_name(record)
+    if records:
+        for record in records:
+            display_name = role_jobs.get_display_name(record)
             click.echo(display_name)
 
-@s3files.command(name="create")
-@click.argument("bucket")
+@roles.command(name="create")
 @click.argument("name")
-@click.argument("filepath", type=click.Path(exists=True))
+@click.option(
+    "--filepath",
+    type=click.Path(exists=True),
+    help="A file containing the role definition.")
+@click.option(
+    "--contents",
+    help="A JSON string of the role definition.")
 @click.option(
     "--profile",
     help="An AWS profile to connect with.")
@@ -74,21 +77,29 @@ def list_s3_files(
 @click.option(
     "--access-key-secret",
     help="An AWS access key secret.")
-def create_s3_file(
-        bucket,
+def create_role(
         name,
-        filepath,
+        filepath=None,
+        contents=None,
         private=None,
         profile=None,
         access_key_id=None,
         access_key_secret=None):
-    """Create s3 files."""
+    """Create IAM roles."""
     aws_profile = utils.get_profile(profile, access_key_id, access_key_secret)
 
+    required_params = [filepath, contents]
+    if not any(required_params):
+        msg = "Which filepath or contents? Use --filepath or --contents."
+        raise click.ClickException(msg)
+    elif any(required_params) and all(required_params):
+        msg = "Specify a filepath or contents, but not both."
+        raise click.ClickException(msg)
+    
     try:
-        files = s3_jobs.create(aws_profile, bucket, name, filepath)
+        records = role_jobs.create(aws_profile, name, filepath, contents)
     except PermissionDenied:
-        msg = "You don't have permission to create S3 files."
+        msg = "You don't have permission to create IAM roles."
         raise click.ClickException(msg)
     except (MissingKey, Non200Response) as error:
         raise click.ClickException(str(error))
@@ -97,14 +108,13 @@ def create_s3_file(
     except (ResourceDoesNotExist, ResourceAlreadyExists, ResourceNotCreated, FileDoesNotExist) as error:
         raise click.ClickException(str(error))
 
-    if files:
-        for record in files:
-            display_name = s3_jobs.get_display_name(record)
+    if records:
+        for record in records:
+            display_name = role_jobs.get_display_name(record)
             click.echo(display_name)
 
 
-@s3files.command(name="delete")
-@click.argument("bucket")
+@roles.command(name="delete")
 @click.argument("name")
 @click.option(
     "--profile",
@@ -115,19 +125,18 @@ def create_s3_file(
 @click.option(
     "--access-key-secret",
     help="An AWS access key secret.")
-def delete_s3_file(
-        bucket,
+def delete_role(
         name,
         profile=None,
         access_key_id=None,
         access_key_secret=None):
-    """Delete s3 files."""
+    """Delete IAM roles."""
     aws_profile = utils.get_profile(profile, access_key_id, access_key_secret)
 
     try:
-        s3_jobs.delete(aws_profile, bucket, name)
+        role_jobs.delete(aws_profile, name)
     except PermissionDenied:
-        msg = "You don't have permission to delete S3 files."
+        msg = "You don't have permission to delete roles."
         raise click.ClickException(msg)
     except (MissingKey, Non200Response) as error:
         raise click.ClickException(str(error))

@@ -2,7 +2,7 @@
 
 """Utilities for working with the user's account."""
 
-from . import client as boto3client
+from .. import client as boto3client
 
 
 def get(profile):

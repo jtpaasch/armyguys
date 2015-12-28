@@ -173,7 +173,7 @@ def create(profile, bucket, name, filepath=None, contents=None):
 
         filepath
             The path to a file. If you provide this, leave
-            the ``filecontents`` parameter blank.
+            the ``contents`` parameter blank.
 
         contents
             The contents of a file. If you provide this, leave
