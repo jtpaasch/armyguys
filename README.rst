@@ -6,18 +6,17 @@ Run Docker containers in Amazon's cloud.
 This is in active development, but here's the basic rundown.
 
 
-Try it out
-----------
+Make sure it works
+------------------
 
 From the command line, type this::
 
     armyguys zones list
 
-That should list all availability zones in your region.
-    
+If all is working, that should list all availability zones in your region.
+
 If you get a permissions error, check out the *Authenticating*
 section below.
-
 
 Clusters
 --------
