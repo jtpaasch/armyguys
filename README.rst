@@ -115,7 +115,7 @@ the cluster::
 Authenticating
 --------------
 
-Most ``armyguys`` commands need to connect to AWS. For that, it
+Most ``armyguys`` commands need to connect to AWS. For that, ``armyguys``
 needs credentials.
 
 By default, ``armyguys`` will use the default profile it finds on your
