@@ -235,7 +235,7 @@ def delete_cluster(
 
 
 @clusters.command(name="serve")
-@click.argument("name")
+@click.argument("cluster")
 @click.argument("loadbalancer")
 @click.option(
     "--profile",
@@ -247,7 +247,7 @@ def delete_cluster(
     "--access-key-secret",
     help="An AWS access key secret.")
 def serve(
-        name,
+        cluster,
         loadbalancer,
         profile=None,
         access_key_id=None,
@@ -256,7 +256,7 @@ def serve(
     aws_profile = utils.get_profile(profile, access_key_id, access_key_secret)
 
     try:
-        cluster_jobs.attach_load_balancer(aws_profile, name, loadbalancer)
+        cluster_jobs.attach_load_balancer(aws_profile, cluster, loadbalancer)
     except PermissionDenied:
         msg = "You don't have permission to attach load balancers."
         raise click.ClickException(msg)
@@ -269,7 +269,7 @@ def serve(
 
 
 @clusters.command(name="unserve")
-@click.argument("name")
+@click.argument("cluster")
 @click.argument("loadbalancer")
 @click.option(
     "--profile",
@@ -281,7 +281,7 @@ def serve(
     "--access-key-secret",
     help="An AWS access key secret.")
 def unserve(
-        name,
+        cluster,
         loadbalancer,
         profile=None,
         access_key_id=None,

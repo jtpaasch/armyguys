@@ -525,24 +525,26 @@ def delete(profile, name):
         raise ResourceNotDeleted(msg)
 
 
-def attach_load_balancer(profile, name, load_balancer):
-    """Attach a load balancer to an auto scaling group.
+def attach_load_balancer(profile, cluster, load_balancer):
+    """Attach a load balancer to a cluster's auto scaling group.
 
     Args:
 
         profile
             A profile to connect to AWS with.
 
-        name
-            The name of an auto scaling group.
+        cluster
+            The name of a cluster.
 
         load_balancer
             The name of a load balancer.
 
     """
+    auto_scaling_group_name = get_auto_scaling_group_name(cluster)
+
     # Make sure the auto scaling group exists.
-    if not exists(profile, name):
-        msg = "No auto scaling group '" + str(name) + "'."
+    if not exists(profile, auto_scaling_group_name):
+        msg = "No auto scaling group '" + str(auto_scaling_group_name) + "'."
         raise ResourceDoesNotExist(msg)
 
     # Make sure the load balancer exists.
@@ -552,29 +554,31 @@ def attach_load_balancer(profile, name, load_balancer):
 
     params = {}
     params["profile"] = profile
-    params["autoscaling_group"] = name
+    params["autoscaling_group"] = auto_scaling_group_name
     params["load_balancer"] = load_balancer
     utils.do_request(autoscalinggroup, "attach_load_balancer", params)
 
 
-def detach_load_balancer(profile, name, load_balancer):
-    """Detach a load balancer from an auto scaling group.
+def detach_load_balancer(profile, cluster, load_balancer):
+    """Detach a load balancer from a cluster's auto scaling group.
 
     Args:
 
         profile
             A profile to connect to AWS with.
 
-        name
-            The name of an auto scaling group.
+        cluster
+            The name of a cluster.
 
         load_balancer
             The name of a load balancer.
 
     """
+    auto_scaling_group_name = get_auto_scaling_group_name(cluster)
+
     # Make sure the auto scaling group exists.
     if not exists(profile, name):
-        msg = "No auto scaling group '" + str(name) + "'."
+        msg = "No auto scaling group '" + str(auto_scaling_group_name) + "'."
         raise ResourceDoesNotExist(msg)
 
     # Make sure the load balancer exists.
@@ -584,6 +588,6 @@ def detach_load_balancer(profile, name, load_balancer):
 
     params = {}
     params["profile"] = profile
-    params["autoscaling_group"] = name
+    params["autoscaling_group"] = auto_scaling_group_name
     params["load_balancer"] = load_balancer
     utils.do_request(autoscalinggroup, "detach_load_balancer", params)
