@@ -107,7 +107,7 @@ To create a service called "my-app-service" in a cluster, use
         --cluster my-app-cluster \
         --task-definition my-app-task-def:1
 
-To delete that servec, use ``delete my-app-service`` and specify
+To delete that service, use ``delete my-app-service`` and specify
 the cluster::
 
     armyguys services delete my-app-task --cluster my-app-cluster
@@ -138,10 +138,24 @@ like this::
 
     armyguys zones list --profile foo
 
-If you don't want to rely on the ``~/.aws/credentials`` file, you can
-use the ``--access-key-id`` and ``access-key-secret`` parameters to
+If you don't want to rely on the ``~/.aws/credentials`` file at all, you
+can use the ``--access-key-id`` and ``access-key-secret`` parameters to
 specify your AWS access keys, like this::
 
     armyguys zones list \
         --access-key-id ACCESS-KEY \
         --access-key-secret KEY-SECRET
+
+
+Help and Other Commands
+-----------------------
+
+To see the help, just type ``armyguys`` from the command line::
+
+    armyguys
+
+You can also use the ``--help`` flag after any command or subcommand.
+For instance::
+
+    armyguys tasks create --help
+
