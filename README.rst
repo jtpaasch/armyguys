@@ -6,7 +6,7 @@ Run Docker containers in Amazon's cloud.
 This is in active development, but here's the basic rundown.
 
 
-Make sure it works
+Make Sure It Works
 ------------------
 
 From the command line, type this::
