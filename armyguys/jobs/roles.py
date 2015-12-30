@@ -4,7 +4,7 @@
 
 import os
 
-from ..aws.iam import role
+from ..aws.iam import role as role_lib
 
 from .exceptions import FileDoesNotExist
 from .exceptions import ImproperlyConfigured
@@ -14,6 +14,8 @@ from .exceptions import ResourceDoesNotExist
 from .exceptions import ResourceNotCreated
 from .exceptions import ResourceNotDeleted
 from .exceptions import WaitTimedOut
+
+from . import policies as policy_jobs
 
 from . import utils
 
@@ -47,13 +49,13 @@ def fetch_all(profile):
     """
     params = {}
     params["profile"] = profile
-    response = utils.do_request(role, "get", params)
+    response = utils.do_request(role_lib, "get", params)
     data = utils.get_data("Roles", response)
     return data
 
 
 def fetch_by_name(profile, name):
-    """Fetch a profile by name.
+    """Fetch a role by name.
 
     Args:
 
@@ -69,7 +71,7 @@ def fetch_by_name(profile, name):
     """
     params = {}
     params["profile"] = profile
-    response = utils.do_request(role, "get", params)
+    response = utils.do_request(role_lib, "get", params)
     data = utils.get_data("Roles", response)
     result = [x for x in data if x["RoleName"] == name]
     return result
@@ -141,7 +143,7 @@ def create(profile, name, filepath=None, contents=None):
         params["filepath"] = filepath
     elif contents:
         params["contents"] = contents
-    response = utils.do_request(role, "create", params)
+    response = utils.do_request(role_lib, "create", params)
 
     # Check that it exists.
     role_data = fetch_by_name(profile, name)
@@ -173,10 +175,90 @@ def delete(profile, name):
     # Now try to delete it.
     params = {}
     params["profile"] = profile
-    params["name"] = name
-    response = utils.do_request(role, "delete", params)
+    params["role"] = name
+    response = utils.do_request(role_lib, "delete", params)
 
     # Check that it was, in fact, deleted.
     if exists(profile, name):
         msg = "The role '" + str(name) + "' was not deleted."
         raise ResourceNotDeleted(msg)
+
+
+def attach(profile, role, policy):
+    """Attach an IAM policy to an IAM role.
+
+    Args:
+
+        profile
+            A profile to connect to AWS with.
+
+        role
+            The name of a role.
+
+        policy
+            The name of a policy.
+
+    Returns:
+        The data returned by boto3.
+
+    """
+    # Make sure the role exists.
+    if not exists(profile, role):
+        msg = "No role '" + str(role) + "'."
+        raise ResourceDoesNotExist(msg)
+
+    # Make sure the policy exists.
+    policy_data = policy_jobs.fetch_by_name(profile, policy)
+    if not policy_data:
+        msg = "No policy '" + str(policy) + "'."
+        raise ResourceDoesNotExist(msg)
+
+    # Get the policy's ARN.
+    policy_arn = policy_data[0]["Arn"]
+    
+    # Attach the policy to the role.
+    params = {}
+    params["profile"] = profile
+    params["role"] = role
+    params["policy"] = policy_arn
+    utils.do_request(role_lib, "attach_policy", params)
+
+
+def detach(profile, role, policy):
+    """Detach an IAM policy from an IAM role.
+
+    Args:
+
+        profile
+            A profile to connect to AWS with.
+
+        role
+            The name of a role.
+
+        policy
+            The name of a policy.
+
+    Returns:
+        The data returned by boto3.
+
+    """
+    # Make sure the role exists.
+    if not exists(profile, role):
+        msg = "No role '" + str(role) + "'."
+        raise ResourceDoesNotExist(msg)
+
+    # Make sure the policy exists.
+    policy_data = policy_jobs.fetch_by_name(profile, policy)
+    if not policy_data:
+        msg = "No policy '" + str(policy) + "'."
+        raise ResourceDoesNotExist(msg)
+
+    # Get the policy's ARN.
+    policy_arn = policy_data[0]["Arn"]
+
+    # Detach the policy.
+    params = {}
+    params["profile"] = profile
+    params["role"] = role
+    params["policy"] = policy_arn
+    utils.do_request(role_lib, "detach_policy", params)

@@ -5,6 +5,8 @@
 from base64 import b64encode
 from time import sleep
 
+import json
+
 from botocore.exceptions import ClientError
 
 from ..aws.iam import account
@@ -14,9 +16,12 @@ from ..aws.ecs import cluster
 
 from . import autoscalinggroups as scalinggroup_jobs
 from . import availabilityzones as zone_jobs
+from . import instanceprofiles as instanceprofile_jobs
 from . import launchconfigurations as launchconfig_jobs
 from . import loadbalancers as loadbalancer_jobs
+from . import policies as policy_jobs
 from . import regions as region_jobs
+from . import roles as role_jobs
 from . import s3buckets as s3bucket_jobs
 from . import s3files as s3file_jobs
 
@@ -270,7 +275,6 @@ def create(
         instance_type=None,
         key_pair=None,
         security_groups=None,
-        instance_profile=None,
         user_data_files=None,
         user_data=None,
         min_size=None,
@@ -298,9 +302,6 @@ def create(
 
         security_groups
             A list of security group names or IDs.
-
-        instance_profile
-            The name of an instance profile for the EC2 instances.
 
         user_data_files
             A list of {"filepath": path, "contenttype": type} entries
@@ -420,11 +421,17 @@ def create(
         name=ecs_config_in_s3,
         contents=ecs_config)
 
+    # Create an instance profile.
+    instance_profile_data = create_instance_profile(profile, name)
+    instance_profile = utils.get_data(
+        "InstanceProfileName",
+        instance_profile_data[0])
+    
     # Add a tag indicating which cluster this all belongs to.
     if not tags:
         tags = []
     tags.append({"Key": "ECS Cluster", "Value": name})
-
+    
     # Create the launch configuration.
     params = {}
     params["profile"] = profile
@@ -510,7 +517,10 @@ def delete(profile, name):
     # If there's a launch config, delete it.
     if launchconfig_jobs.exists(profile, launch_config_name):
         launchconfig_jobs.delete(profile, launch_config_name)
-        
+
+    # If there's an instance profile, delete it.
+    delete_instance_profile(profile, name)
+
     # Now try to delete the cluster.
     params = {}
     params["profile"] = profile
@@ -591,3 +601,90 @@ def detach_load_balancer(profile, cluster, load_balancer):
     params["autoscaling_group"] = auto_scaling_group_name
     params["load_balancer"] = load_balancer
     utils.do_request(autoscalinggroup, "detach_load_balancer", params)
+
+
+def create_instance_profile(profile, cluster):
+    """Create an instance profile for the cluster.
+
+    Args:
+
+        profile
+            A profile to connect to AWS with.
+
+        cluster
+            The name of a cluster.
+
+    """
+    role_name = str(cluster) + "--ecs-role"
+    policy_name = str(cluster) + "--ecs-policy"
+    instance_profile_name = str(cluster) + "--ecs-instance-profile"
+
+    # Create a role that EC2 instances can assume:
+    contents = {
+        "Version": "2012-10-17",
+        "Statement": {
+            "Effect": "Allow",
+            "Principal": {
+                "Service": "ec2.amazonaws.com",
+            },
+            "Action": "sts:AssumeRole",
+        }
+    }
+    role_jobs.create(profile, role_name, contents=contents)
+
+    # Create a policy that lets the ECS agent do what it needs.
+    contents = {
+        "Version": "2012-10-17",
+        "Statement": [
+            {
+                "Effect": "Allow",
+                "Action": [
+                    "ec2:Describe*",
+                    "elasticloadbalancing:*",
+                    "ecs:*",
+                    "iam:ListInstanceProfiles",
+                    "iam:ListRoles",
+                    "iam:PassRole"
+                ],
+                "Resource": "*"
+            }
+        ]
+    }
+    policy_jobs.create(profile, policy_name, contents=contents)
+
+    # Attach the policy to the role.
+    role_jobs.attach(profile, role_name, policy_name)
+
+    # Create an instance profile.
+    instanceprofile_jobs.create(profile, instance_profile_name)
+
+    # Attach the role to the instance profile.
+    instanceprofile_jobs.attach(profile, instance_profile_name, role_name)
+
+    # Return the instance profile.
+    return instanceprofile_jobs.fetch_by_name(
+        profile,
+        instance_profile_name)
+
+
+def delete_instance_profile(profile, cluster):
+    """Create an instance profile for the cluster.
+
+    Args:
+
+        profile
+            A profile to connect to AWS with.
+
+        cluster
+            The name of a cluster.
+
+    """
+    role_name = str(cluster) + "--ecs-role"
+    policy_name = str(cluster) + "--ecs-policy"
+    instance_profile_name = str(cluster) + "--ecs-instance-profile"
+
+    instanceprofile_jobs.detach(profile, instance_profile_name, role_name)
+    instanceprofile_jobs.delete(profile, instance_profile_name)
+    role_jobs.detach(profile, role_name, policy_name)
+    role_jobs.delete(profile, role_name)
+    policy_jobs.delete(profile, policy_name)

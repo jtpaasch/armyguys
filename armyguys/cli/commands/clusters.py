@@ -72,9 +72,6 @@ def list_clusters(
     multiple=True,
     help="The name or ID of a security group.")
 @click.option(
-    "--instance-profile",
-    help="An instance profile for the EC2 instances.")
-@click.option(
     "--user-data-file",
     multiple=True,
     help="TYPE:FILEPATH, e.g., text/x-shellscript:foo.sh.")
@@ -132,7 +129,6 @@ def create_cluster(
         instance_type=None,
         key_pair=None,
         security_group=None,
-        instance_profile=None,
         user_data_file=None,
         user_data=None,
         min_size=None,
@@ -157,10 +153,6 @@ def create_cluster(
     tags = None
     if tag:
         tags = utils.parse_tags(tag)
-
-    if not instance_profile:
-        msg = "Which instance profile? Use --instance-profile."
-        raise click.ClickException(msg)
         
     try:
         records = cluster_jobs.create(
@@ -169,7 +161,6 @@ def create_cluster(
             instance_type,
             key_pair,
             security_group,
-            instance_profile,
             user_data_files,
             user_data,
             min_size,

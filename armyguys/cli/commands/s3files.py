@@ -78,7 +78,6 @@ def create_s3_file(
         bucket,
         name,
         filepath,
-        private=None,
         profile=None,
         access_key_id=None,
         access_key_secret=None):

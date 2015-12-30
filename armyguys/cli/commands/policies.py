@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 
-"""Commands for managing ECS task definitions."""
+"""Commands for managing IAM policies."""
 
 import click
 
-from ...jobs import taskdefinitions as taskdef_jobs
+from ...jobs import policies as policy_jobs
 
 from ...jobs.exceptions import AwsError
 from ...jobs.exceptions import FileDoesNotExist
@@ -20,12 +20,12 @@ from .. import utils
 
 
 @click.group()
-def taskdefinitions():
-    """Manage ECS task definitions."""
+def policies():
+    """Manage IAM policies."""
     pass
 
 
-@taskdefinitions.command(name="list")
+@policies.command(name="list")
 @click.option(
     "--profile",
     help="An AWS profile to connect with.")
@@ -35,17 +35,17 @@ def taskdefinitions():
 @click.option(
     "--access-key-secret",
     help="An AWS access key secret.")
-def list_task_definitions(
+def list_policies(
         profile=None,
         access_key_id=None,
         access_key_secret=None):
-    """List ECS task definitions."""
+    """List IAM policies."""
     aws_profile = utils.get_profile(profile, access_key_id, access_key_secret)
 
     try:
-        records = taskdef_jobs.fetch_all(aws_profile)
+        records = policy_jobs.fetch_all(aws_profile)
     except PermissionDenied:
-        msg = "You don't have permission to view task definitions."
+        msg = "You don't have permission to view policies."
         raise click.ClickException(msg)
     except (MissingKey, Non200Response) as error:
         raise click.ClickException(str(error))
@@ -56,18 +56,18 @@ def list_task_definitions(
 
     if records:
         for record in records:
-            display_name = taskdef_jobs.get_display_name_from_arn(record)
+            display_name = policy_jobs.get_display_name(record)
             click.echo(display_name)
 
-
-@taskdefinitions.command(name="create")
+@policies.command(name="create")
+@click.argument("name")
 @click.option(
     "--filepath",
     type=click.Path(exists=True),
-    help="A task definition file.")
+    help="A file containing the policy definition.")
 @click.option(
     "--contents",
-    help="A JSON string of the contents.")
+    help="A JSON string of the policy definition.")
 @click.option(
     "--profile",
     help="An AWS profile to connect with.")
@@ -77,13 +77,14 @@ def list_task_definitions(
 @click.option(
     "--access-key-secret",
     help="An AWS access key secret.")
-def create_task_definition(
+def create_policy(
+        name,
         filepath=None,
         contents=None,
         profile=None,
         access_key_id=None,
         access_key_secret=None):
-    """Create ECS task definitions."""
+    """Create IAM policies."""
     aws_profile = utils.get_profile(profile, access_key_id, access_key_secret)
 
     required_params = [filepath, contents]
@@ -95,23 +96,24 @@ def create_task_definition(
         raise click.ClickException(msg)
     
     try:
-        record = taskdef_jobs.create(aws_profile, filepath, contents)
+        records = policy_jobs.create(aws_profile, name, filepath, contents)
     except PermissionDenied:
-        msg = "You don't have permission to create task definitions."
+        msg = "You don't have permission to create IAM policies."
         raise click.ClickException(msg)
     except (MissingKey, Non200Response) as error:
         raise click.ClickException(str(error))
     except AwsError as error:
         raise click.ClickException(str(error))
-    except (ResourceDoesNotExist, ResourceAlreadyExists, ResourceNotCreated) as error:
+    except (ResourceDoesNotExist, ResourceAlreadyExists, ResourceNotCreated, FileDoesNotExist) as error:
         raise click.ClickException(str(error))
 
-    if record:
-        display_name = taskdef_jobs.get_display_name(record)
-        click.echo(display_name)
+    if records:
+        for record in records:
+            display_name = policy_jobs.get_display_name(record)
+            click.echo(display_name)
 
 
-@taskdefinitions.command(name="delete")
+@policies.command(name="delete")
 @click.argument("name")
 @click.option(
     "--profile",
@@ -122,22 +124,22 @@ def create_task_definition(
 @click.option(
     "--access-key-secret",
     help="An AWS access key secret.")
-def delete_task_definition(
+def delete_policy(
         name,
         profile=None,
         access_key_id=None,
         access_key_secret=None):
-    """Delete ECS task definitions."""
+    """Delete IAM policies."""
     aws_profile = utils.get_profile(profile, access_key_id, access_key_secret)
 
     try:
-        taskdef_jobs.delete(aws_profile, name)
+        policy_jobs.delete(aws_profile, name)
     except PermissionDenied:
-        msg = "You don't have permission to delete task definitions."
+        msg = "You don't have permission to delete policies."
         raise click.ClickException(msg)
     except (MissingKey, Non200Response) as error:
         raise click.ClickException(str(error))
     except AwsError as error:
         raise click.ClickException(str(error))
-    except (ResourceDoesNotExist, ResourceAlreadyExists, ResourceNotDeleted) as error:
+    except (ResourceDoesNotExist, ResourceNotDeleted) as error:
         raise click.ClickException(str(error))

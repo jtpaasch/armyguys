@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 
-"""Commands for managing IAM roles."""
+"""Commands for managing IAM instance profiles."""
 
 import click
 
-from ...jobs import roles as role_jobs
+from ...jobs import instanceprofiles as instanceprofile_jobs
 
 from ...jobs.exceptions import AwsError
 from ...jobs.exceptions import FileDoesNotExist
@@ -20,12 +20,12 @@ from .. import utils
 
 
 @click.group()
-def roles():
-    """Manage IAM roles."""
+def instanceprofiles():
+    """Manage IAM instance profiles."""
     pass
 
 
-@roles.command(name="list")
+@instanceprofiles.command(name="list")
 @click.option(
     "--profile",
     help="An AWS profile to connect with.")
@@ -35,17 +35,17 @@ def roles():
 @click.option(
     "--access-key-secret",
     help="An AWS access key secret.")
-def list_roles(
+def list_instance_profiles(
         profile=None,
         access_key_id=None,
         access_key_secret=None):
-    """List IAM roles."""
+    """List IAM instance profiles."""
     aws_profile = utils.get_profile(profile, access_key_id, access_key_secret)
 
     try:
-        records = role_jobs.fetch_all(aws_profile)
+        records = instanceprofile_jobs.fetch_all(aws_profile)
     except PermissionDenied:
-        msg = "You don't have permission to view roles."
+        msg = "You don't have permission to view instance profiles."
         raise click.ClickException(msg)
     except (MissingKey, Non200Response) as error:
         raise click.ClickException(str(error))
@@ -56,18 +56,12 @@ def list_roles(
 
     if records:
         for record in records:
-            display_name = role_jobs.get_display_name(record)
+            display_name = instanceprofile_jobs.get_display_name(record)
             click.echo(display_name)
 
-@roles.command(name="create")
+
+@instanceprofiles.command(name="create")
 @click.argument("name")
-@click.option(
-    "--filepath",
-    type=click.Path(exists=True),
-    help="A file containing the role definition.")
-@click.option(
-    "--contents",
-    help="A JSON string of the role definition.")
 @click.option(
     "--profile",
     help="An AWS profile to connect with.")
@@ -77,28 +71,18 @@ def list_roles(
 @click.option(
     "--access-key-secret",
     help="An AWS access key secret.")
-def create_role(
+def create_instance_profile(
         name,
-        filepath=None,
-        contents=None,
         profile=None,
         access_key_id=None,
         access_key_secret=None):
-    """Create IAM roles."""
+    """Create IAM instance profiles."""
     aws_profile = utils.get_profile(profile, access_key_id, access_key_secret)
 
-    required_params = [filepath, contents]
-    if not any(required_params):
-        msg = "Which filepath or contents? Use --filepath or --contents."
-        raise click.ClickException(msg)
-    elif any(required_params) and all(required_params):
-        msg = "Specify a filepath or contents, but not both."
-        raise click.ClickException(msg)
-    
     try:
-        records = role_jobs.create(aws_profile, name, filepath, contents)
+        records = instanceprofile_jobs.create(aws_profile, name)
     except PermissionDenied:
-        msg = "You don't have permission to create IAM roles."
+        msg = "You don't have permission to create IAM instance profiles."
         raise click.ClickException(msg)
     except (MissingKey, Non200Response) as error:
         raise click.ClickException(str(error))
@@ -109,11 +93,11 @@ def create_role(
 
     if records:
         for record in records:
-            display_name = role_jobs.get_display_name(record)
+            display_name = instanceprofile_jobs.get_display_name(record)
             click.echo(display_name)
 
 
-@roles.command(name="delete")
+@instanceprofiles.command(name="delete")
 @click.argument("name")
 @click.option(
     "--profile",
@@ -129,13 +113,13 @@ def delete_role(
         profile=None,
         access_key_id=None,
         access_key_secret=None):
-    """Delete IAM roles."""
+    """Delete IAM instance profiles."""
     aws_profile = utils.get_profile(profile, access_key_id, access_key_secret)
 
     try:
-        role_jobs.delete(aws_profile, name)
+        instanceprofile_jobs.delete(aws_profile, name)
     except PermissionDenied:
-        msg = "You don't have permission to delete roles."
+        msg = "You don't have permission to delete instance profiles."
         raise click.ClickException(msg)
     except (MissingKey, Non200Response) as error:
         raise click.ClickException(str(error))
@@ -145,9 +129,9 @@ def delete_role(
         raise click.ClickException(str(error))
 
 
-@roles.command(name="attach")
+@instanceprofiles.command(name="attach")
+@click.argument("instance_profile")
 @click.argument("role")
-@click.argument("policy")
 @click.option(
     "--profile",
     help="An AWS profile to connect with.")
@@ -157,19 +141,19 @@ def delete_role(
 @click.option(
     "--access-key-secret",
     help="An AWS access key secret.")
-def attach_policy(
+def attach_role(
+        instance_profile,
         role,
-        policy,
         profile=None,
         access_key_id=None,
         access_key_secret=None):
-    """Attach policies to roles."""
+    """Attach roles to instance profiles."""
     aws_profile = utils.get_profile(profile, access_key_id, access_key_secret)
 
     try:
-        role_jobs.attach(aws_profile, role, policy)
+        instanceprofile_jobs.attach(aws_profile, instance_profile, role)
     except PermissionDenied:
-        msg = "You don't have permission to attach policies."
+        msg = "You don't have permission to attach roles."
         raise click.ClickException(msg)
     except (MissingKey, Non200Response) as error:
         raise click.ClickException(str(error))
@@ -179,9 +163,9 @@ def attach_policy(
         raise click.ClickException(str(error))
 
 
-@roles.command(name="detach")
+@instanceprofiles.command(name="detach")
+@click.argument("instance_profile")
 @click.argument("role")
-@click.argument("policy")
 @click.option(
     "--profile",
     help="An AWS profile to connect with.")
@@ -191,19 +175,19 @@ def attach_policy(
 @click.option(
     "--access-key-secret",
     help="An AWS access key secret.")
-def detach_policy(
+def detach_role(
+        instance_profile,
         role,
-        policy,
         profile=None,
         access_key_id=None,
         access_key_secret=None):
-    """Detach policies from roles."""
+    """Detach roles from instance profiles."""
     aws_profile = utils.get_profile(profile, access_key_id, access_key_secret)
 
     try:
-        role_jobs.detach(aws_profile, role, policy)
+        instanceprofile_jobs.detach(aws_profile, instance_profile, role)
     except PermissionDenied:
-        msg = "You don't have permission to detach policies."
+        msg = "You don't have permission to detach roles."
         raise click.ClickException(msg)
     except (MissingKey, Non200Response) as error:
         raise click.ClickException(str(error))
