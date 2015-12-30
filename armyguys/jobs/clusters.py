@@ -31,6 +31,7 @@ from .exceptions import ResourceDoesNotExist
 from .exceptions import ResourceHasDependency
 from .exceptions import ResourceNotCreated
 from .exceptions import ResourceNotDeleted
+from .exceptions import ResourceNotReady
 from .exceptions import WaitTimedOut
 
 from . import utils
@@ -269,9 +270,35 @@ def polling_is_deleted(profile, name, max_attempts=10, wait_interval=1):
     return is_deleted
 
 
+def create_error_handler(error):
+    """Handle errors that arise when you create a cluster.
+
+    Args:
+
+        error
+            An AWS ``ClientError`` exception.
+
+    Raises:
+        ...
+
+    Returns:
+        None, if the error is not worth handling.
+
+    """
+    code = error.response["Error"]["Code"]
+    message = error.response["Error"]["Message"]
+    print(code)
+    print(message)
+    if message.starts_with("Invalid IamInstanceProfile"):
+        raise ResourceNotReady()
+    else:
+        raise error
+    
+
 def create(
         profile,
         name,
+        instance_profile,
         instance_type=None,
         key_pair=None,
         security_groups=None,
@@ -296,6 +323,9 @@ def create(
 
         name
             The name you want to give to the cluster.
+
+        instance_profile
+            The name of an ECS intsance profile.
 
         key_pair
             The name of a key pair to use.
@@ -421,17 +451,29 @@ def create(
         name=ecs_config_in_s3,
         contents=ecs_config)
 
-    # Create an instance profile.
-    instance_profile_data = create_instance_profile(profile, name)
-    instance_profile = utils.get_data(
-        "InstanceProfileName",
-        instance_profile_data[0])
-    
+    # Create an instance profile, if one hasn't been specified.
+    if not instance_profile:
+        instance_profile_data = create_instance_profile(profile, name)
+
+        # Get its name.
+        if not instance_profile_data:
+            msg = "Instance profile not created."
+            raise RseourceNotCreated(msg)
+        else:
+            instance_profile = utils.get_data(
+                "InstanceProfileName",
+                instance_profile_data[0])
+
+    # We need an instance profile.
+    if not instance_profile:
+        msg = "No instance profile."
+        raise ImproperlyConfigured(msg)
+
     # Add a tag indicating which cluster this all belongs to.
     if not tags:
         tags = []
     tags.append({"Key": "ECS Cluster", "Value": name})
-    
+
     # Create the launch configuration.
     params = {}
     params["profile"] = profile
@@ -683,8 +725,64 @@ def delete_instance_profile(profile, cluster):
     policy_name = str(cluster) + "--ecs-policy"
     instance_profile_name = str(cluster) + "--ecs-instance-profile"
 
-    instanceprofile_jobs.detach(profile, instance_profile_name, role_name)
-    instanceprofile_jobs.delete(profile, instance_profile_name)
-    role_jobs.detach(profile, role_name, policy_name)
-    role_jobs.delete(profile, role_name)
-    policy_jobs.delete(profile, policy_name)
+    # Do these resources exist?
+    is_role = role_jobs.exists(profile, role_name)
+    is_policy = policy_jobs.exists(profile, policy_name)
+    is_instance_profile = instanceprofile_jobs.exists(
+        profile,
+        instance_profile_name)
+
+    # Detach the role from the instance profile if needed.
+    if is_role and is_instance_profile:
+
+        # Is the role attached?
+        is_role_attached = instanceprofile_jobs.is_attached(
+            profile,
+            instance_profile_name,
+            role_name)
+
+        # Detach it.
+        if is_role_attached:
+            instanceprofile_jobs.detach(profile, instance_profile_name, role_name)
+
+        # Make sure it got detached.
+        is_role_detached = instanceprofile_jobs.is_detached(
+            profile,
+            instance_profile_name,
+            role_name)
+        if not is_role_detached:
+            msg = "Could not detach '" + str(role_name) \
+                  + "' from '" + str(instance_profile_name) + "'."
+            raise ResourceNotDetached(msg)
+
+    # Delete the instance profile, if needed.
+    if is_instance_profile:
+        instanceprofile_jobs.delete(profile, instance_profile_name)
+
+        # Make sure it got deleted.
+        if instanceprofile_jobs.exists(profile, instance_profile_name):
+            msg = "Instance profile '" + str(instance_profile_name) \
+                  + "' not deleted."
+            raise ResourceNotDeleted(msg)
+
+    # Detach the policy from the role if needed.
+    if is_role and is_policy:
+        role_jobs.detach(profile, role_name, policy_name)
+
+    # Delete the role, if needed.
+    if is_role:
+        role_jobs.delete(profile, role_name)
+
+        # Make sure it got deleted.
+        if role_jobs.exists(profile, role_name):
+            msg = "Role '" + str(role_name) + "' not deleted."
+            raise ResourceNotDeleted(msg)
+
+    # Delete the policy, if needed.
+    if is_policy:
+        policy_jobs.delete(profile, policy_name)
+
+        # Make sure it got deleted.
+        if policy_jobs.exists(profile, policy_name):
+            msg = "Policy '" + str(policy_name) + "' not deleted."
+            raise ResourceNotDeleted(msg)

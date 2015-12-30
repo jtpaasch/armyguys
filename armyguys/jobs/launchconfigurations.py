@@ -14,10 +14,12 @@ from .exceptions import ResourceDoesNotExist
 from .exceptions import ResourceHasDependency
 from .exceptions import ResourceNotCreated
 from .exceptions import ResourceNotDeleted
+from .exceptions import ResourceNotReady
 from .exceptions import WaitTimedOut
 
 from . import utils
 
+from . import instanceprofiles as instanceprofile_jobs
 from . import securitygroups as sg_jobs
 
 
@@ -170,6 +172,29 @@ def delete_error_handler(error):
         raise error
 
 
+def create_error_handler(error):
+    """Handle errors that arise when you create a cluster.
+
+    Args:
+
+        error
+            An AWS ``ClientError`` exception.
+
+    Raises:
+        ``ResourceNotReady`` if an instance profile is not ready.
+
+    Returns:
+        None, if the error is not worth handling.
+
+    """
+    code = error.response["Error"]["Code"]
+    message = error.response["Error"]["Message"]
+    if message.startswith("Invalid IamInstanceProfile"):
+        raise ResourceNotReady()
+    else:
+        raise error
+
+
 def create(
         profile,
         name,
@@ -180,7 +205,9 @@ def create(
         public_ip=None,
         instance_profile=None,
         user_data_files=None,
-        user_data=None):
+        user_data=None,
+        max_attempts=10,
+        wait_interval=1):
     """Create a launch configuration.
 
     Args:
@@ -218,6 +245,12 @@ def create(
             A list of {"contents": content, "contenttype": type} entries
             to make into a Mime Multi Part Archive for user data.
 
+        max_attempts
+            The number of times to try to create the launch configuration.
+
+        wait_interval
+            The number of seconds between each creation attempt.
+
     Returns:
         The security group.
 
@@ -243,7 +276,11 @@ def create(
         if sg_ids:
             security_groups = sg_ids
 
-    # TO DO: Check if the instance profile exists.
+    # Check that the instance profile exists.
+    if instance_profile:
+        if not instanceprofile_jobs.exists(profile, instance_profile):
+            msg = "No instance profile '" + str(instance_profile) + "'."
+            raise ResourceDoesNotExist(msg)
 
     # Build the user data.
     archive = utils.create_mime_multipart_archive(user_data_files, user_data)
@@ -266,9 +303,30 @@ def create(
         params["public_ip"] = False
     if archive:
         params["user_data"] = archive
-    response = utils.do_request(launchconfiguration, "create", params)
 
-    # Now check that it exists.
+    # Try to create the thing. If an instance profile isn't ready,
+    # we may have to wait a bit and try again.
+    count = 0
+    while count < max_attempts:
+        response = None
+        try:
+            response = utils.do_request(
+                launchconfiguration,
+                "create",
+                params,
+                error_handler=create_error_handler)
+        except ResourceNotReady:
+            pass
+        if response:
+            break
+        else:
+            count += 1
+            sleep(wait_interval)
+    if not response:
+        msg = "Timed out waiting for launch configuration to be created."
+        raise WaitTimedOut(msg)
+
+    # Now check that the launch configuration exists.
     launch_config_data = None
     try:
         launch_config_data = polling_fetch(profile, name)

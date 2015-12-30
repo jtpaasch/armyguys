@@ -96,6 +96,42 @@ def exists(profile, name):
     return len(result) > 0
 
 
+def polling_fetch(profile, name, max_attempts=10, wait_interval=1):
+    """Try to fetch an instance profile repeatedly until it exists.
+
+    Args:
+
+        profile
+            A profile to connect to AWS with.
+
+        name
+            The name of an instance profile.
+
+        max_attempts
+            The max number of times to poll AWS.
+
+        wait_interval
+            How many seconds to wait between each poll.
+
+    Returns:
+        The instance profile's data, or None if it times out.
+
+    """
+    data = None
+    count = 0
+    while count < max_attempts:
+        data = fetch_by_name(profile, name)
+        if data:
+            break
+        else:
+            count += 1
+            sleep(wait_interval)
+    if not data:
+        msg = "Timed out waiting for instance profile to be created."
+        raise WaitTimedOut(msg)
+    return data
+
+
 def create(profile, name):
     """Create an instance profile.
 
@@ -123,7 +159,7 @@ def create(profile, name):
     response = utils.do_request(instanceprofile, "create", params)
 
     # Check that it exists.
-    instance_profile_data = fetch_by_name(profile, name)
+    instance_profile_data = polling_fetch(profile, name)
     if not instance_profile_data:
         msg = "Instance profile '" + str(name) + "' not created."
         raise ResourceNotCreated(msg)
@@ -231,3 +267,73 @@ def detach(profile, instance_profile, role):
     params["instance_profile"] = instance_profile
     params["role"] = role
     return utils.do_request(instanceprofile, "remove_role", params)
+
+
+def is_attached(profile, instance_profile, role):
+    """Check if an IAM role is attached to an instance profile.
+
+    Args:
+
+        profile
+            A profile to connect to AWS with.
+
+        instance_profile
+            The name of an instance profile.
+
+        role
+            The name of a role.
+
+    Returns:
+        True if it's attached, False if it's not.
+
+    """
+    # Make sure the instance profile exists.
+    instance_profile_data = fetch_by_name(profile, instance_profile)
+    if not instance_profile_data:
+        msg = "No instance profile '" + str(instance_profile) + "'."
+        raise ResourceDoesNotExist(msg)
+
+    # Make sure the role exists.
+    if not role_jobs.exists(profile, role):
+        msg = "No role '" + str(role) + "'."
+        raise ResourceDoesNotExist(msg)
+
+    # Check if the role is attached.
+    roles = utils.get_data("Roles", instance_profile_data[0])
+    matching_roles = [x for x in roles if x["RoleName"] == role]
+    return len(matching_roles) > 0
+
+
+def is_detached(profile, instance_profile, role):
+    """Check if an IAM role is detached from an instance profile.
+
+    Args:
+
+        profile
+            A profile to connect to AWS with.
+
+        instance_profile
+            The name of an instance profile.
+
+        role
+            The name of a role.
+
+    Returns:
+        True if it's detached, False if it's not.
+
+    """
+    # Make sure the instance profile exists.
+    instance_profile_data = fetch_by_name(profile, instance_profile)
+    if not instance_profile_data:
+        msg = "No instance profile '" + str(instance_profile) + "'."
+        raise ResourceDoesNotExist(msg)
+
+    # Make sure the role exists.
+    if not role_jobs.exists(profile, role):
+        msg = "No role '" + str(role) + "'."
+        raise ResourceDoesNotExist(msg)
+
+    # Check if the role is detached.
+    roles = utils.get_data("Roles", instance_profile_data[0])
+    matching_roles = [x for x in roles if x["RoleName"] == role]
+    return len(matching_roles) == 0

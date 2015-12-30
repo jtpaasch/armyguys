@@ -96,6 +96,42 @@ def exists(profile, name):
     return len(result) > 0
 
 
+def polling_fetch(profile, name, max_attempts=10, wait_interval=1):
+    """Try to fetch a role repeatedly until it exists.
+
+    Args:
+
+        profile
+            A profile to connect to AWS with.
+
+        name
+            The name of a role.
+
+        max_attempts
+            The max number of times to poll AWS.
+
+        wait_interval
+            How many seconds to wait between each poll.
+
+    Returns:
+        The role's data, or None if it times out.
+
+    """
+    data = None
+    count = 0
+    while count < max_attempts:
+        data = fetch_by_name(profile, name)
+        if data:
+            break
+        else:
+            count += 1
+            sleep(wait_interval)
+    if not data:
+        msg = "Timed out waiting for role to be created."
+        raise WaitTimedOut(msg)
+    return data
+
+
 def create(profile, name, filepath=None, contents=None):
     """Create a role.
 
@@ -146,7 +182,7 @@ def create(profile, name, filepath=None, contents=None):
     response = utils.do_request(role_lib, "create", params)
 
     # Check that it exists.
-    role_data = fetch_by_name(profile, name)
+    role_data = polling_fetch(profile, name)
     if not role_data:
         msg = "Role '" + str(name) + "' not created."
         raise ResourceNotCreated(msg)

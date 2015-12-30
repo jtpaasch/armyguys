@@ -5,6 +5,7 @@
 import click
 
 from ...jobs import clusters as cluster_jobs
+from ...jobs import instanceprofiles as instanceprofile_jobs
 
 from ...jobs.exceptions import AwsError
 from ...jobs.exceptions import ImproperlyConfigured
@@ -15,6 +16,7 @@ from ...jobs.exceptions import ResourceAlreadyExists
 from ...jobs.exceptions import ResourceDoesNotExist
 from ...jobs.exceptions import ResourceNotCreated
 from ...jobs.exceptions import ResourceNotDeleted
+from ...jobs.exceptions import ResourceNotDetached
 from ...jobs.exceptions import WaitTimedOut
 
 from .. import utils
@@ -61,6 +63,9 @@ def list_clusters(
 
 @clusters.command(name="create")
 @click.argument("name")
+@click.option(
+    "--instance-profile",
+    help="An ECS instance profile.")
 @click.option(
     "--instance-type",
     help="An EC2 instance type.")
@@ -126,6 +131,7 @@ def list_clusters(
     help="An AWS access key secret.")
 def create_cluster(
         name,
+        instance_profile=None,
         instance_type=None,
         key_pair=None,
         security_group=None,
@@ -153,11 +159,12 @@ def create_cluster(
     tags = None
     if tag:
         tags = utils.parse_tags(tag)
-        
+
     try:
         records = cluster_jobs.create(
             aws_profile,
             name,
+            instance_profile,
             instance_type,
             key_pair,
             security_group,
@@ -222,6 +229,8 @@ def delete_cluster(
     except (ResourceDoesNotExist, ResourceNotDeleted) as error:
         raise click.ClickException(str(error))
     except WaitTimedOut as error:
+        raise click.ClickException(str(error))
+    except ResourceNotDetached as error:
         raise click.ClickException(str(error))
 
 

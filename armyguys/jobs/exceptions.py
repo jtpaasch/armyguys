@@ -58,6 +58,16 @@ class ResourceNotDeleted(Exception):
     pass
 
 
+class ResourceNotDetached(Exception):
+    """Raise when one resource failed to get detached from another."""
+    pass
+
+
+class ResourceNotReady(Exception):
+    """Raise when a resource is not ready."""
+    pass
+
+
 class TooManyRecords(Exception):
     """Raise when too many records are returned."""
     pass
