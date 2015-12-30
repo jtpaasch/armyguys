@@ -31,10 +31,7 @@ To see all your clusters, use ``list``::
 
 To create a cluster named "my-app-cluster", use ``create my-app-cluster``::
 
-    armyguys clusters create my-app-cluster \
-        --instance-profile ecsInstanceRole
-
-(Note: the ``--instance-profile`` parameter is required for now.)
+    armyguys clusters create my-app-cluster
 
 To delete that cluster, use ``delete my-app-cluster``::
 
