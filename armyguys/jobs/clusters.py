@@ -377,7 +377,7 @@ def create(
         raise ImproperlyConfigured(msg)
 
     # Construct the authentication information.
-    dockercfg = None
+    auth_data = None
     if all(dockerhub_credentials):
         auth_data = '{"https://index.docker.io/v1/":{' \
                     + '"username":"' \
