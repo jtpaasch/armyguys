@@ -14,7 +14,7 @@ def create(profile, name, application, cname=None, version=None,
            max_instances=1, min_instances=1, tags=None,
            vpc_id=None, subnets=None, db_subnets=None,
            elb_subnets=None, elb_scheme=None,
-           public_ip=None):
+           public_ip=None, root_volume_size=None):
     """Create a multi-container Docker Elastic Beanstalk environment.
 
     Note: 
@@ -119,8 +119,11 @@ def create(profile, name, application, cname=None, version=None,
             Otherwise, leave it blank for a public load balancer.
             Only applicable inside a VPC.
 
-         public_ip
+        public_ip
             Assign public IP addresses to the EC2 instances?
+
+        root_volume_size
+            The size of the root volume, in Gigs.
 
     Returns:
         The JSON response returned by boto3.
@@ -252,6 +255,13 @@ def create(profile, name, application, cname=None, version=None,
             "Value": str(public_ip),
         }
         options.append(public_ip_option)
+    if root_volume_size:
+        root_volume_size_option = {
+            "Namespace": "aws:autoscaling:launchconfiguration",
+            "OptionName": "RootVolumeSize",
+            "Value": str(root_volume_size),
+        }
+        options.append(root_volume_size_option)
     if options:
         params["OptionSettings"] = options
     return client.create_environment(**params)
