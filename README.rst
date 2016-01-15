@@ -9,11 +9,11 @@ This is in active development, but here's the basic rundown.
 Install
 -------
 
-Pip install from the repo (preferably in a virtual environment):
+Pip install from the repo (preferably in a virtual environment)::
 
     pip install git+https://github.com/jtpaasch/armyguys.git#egg=armyguys
 
-Then checkout the help:
+Then checkout the help::
 
     armyguys
 
