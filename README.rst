@@ -6,8 +6,20 @@ Run Docker containers in Amazon's cloud.
 This is in active development, but here's the basic rundown.
 
 
-Make Sure It Works
-------------------
+Install
+-------
+
+Pip install from the repo (preferably in a virtual environment):
+
+    pip install git+https://github.com/jtpaasch/armyguys.git#egg=armyguys
+
+Then checkout the help:
+
+    armyguys
+
+
+Make Sure You Can Connect to AWS
+--------------------------------
 
 From the command line, type this::
 
@@ -15,8 +27,8 @@ From the command line, type this::
 
 If all is working, that should list all availability zones in your region.
 
-If you get a permissions error, check out the *Authenticating*
-section below.
+If you get a permissions error, check out the *Authenticating* section below.
+
 
 Clusters
 --------
