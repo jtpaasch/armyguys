@@ -458,7 +458,7 @@ def create(
         # Get its name.
         if not instance_profile_data:
             msg = "Instance profile not created."
-            raise RseourceNotCreated(msg)
+            raise ResourceNotCreated(msg)
         else:
             instance_profile = utils.get_data(
                 "InstanceProfileName",
