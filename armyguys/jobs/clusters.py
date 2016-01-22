@@ -686,7 +686,9 @@ def create_instance_profile(profile, cluster):
                     "ecs:*",
                     "iam:ListInstanceProfiles",
                     "iam:ListRoles",
-                    "iam:PassRole"
+                    "iam:PassRole",
+                    "s3:ListBucket",
+                    "s3:GetObject",
                 ],
                 "Resource": "*"
             }
