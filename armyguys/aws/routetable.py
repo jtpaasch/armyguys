@@ -157,3 +157,32 @@ def disassociate_subnet(profile, association):
     params = {}
     params["AssociationId"] = association
     return client.disassociate_route_table(**params)
+
+
+def tag(profile, route_table, key, value):
+    """Add a tag to a route table.
+
+    Args:
+
+        profile
+            A profile to connect to AWS with.
+
+        route_table
+            The ID of the route table you want to tag.
+
+        key
+            The key/name of the tag.
+
+        value
+            The value of the tag.
+
+    Returns:
+        The response returned by boto3.
+
+    """
+    client = boto3client.get("ec2", profile)
+    params = {}
+    params["Resources"] = [route_table]
+    params["Tags"] = [{"Key": key, "Value": value}]
+    return client.create_tags(**params)
+
