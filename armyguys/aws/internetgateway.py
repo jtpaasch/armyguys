@@ -50,3 +50,31 @@ def get(profile):
     """
     client = boto3client.get("ec2", profile)
     return client.describe_internet_gateways()
+
+def tag(profile, internet_gateway, key, value):
+    """Add a tag to an internet gateway.
+
+    Args:
+
+        profile
+            A profile to connect to AWS with.
+
+        internet_gateway
+            The ID of the internet_gateway you want to tag.
+
+        key
+            The key/name of the tag.
+
+        value
+            The value of the tag.
+
+    Returns:
+        The response returned by boto3.
+
+    """
+    client = boto3client.get("ec2", profile)
+    params = {}
+    params["Resources"] = [internet_gateway]
+    params["Tags"] = [{"Key": key, "Value": value}]
+    return client.create_tags(**params)
+
