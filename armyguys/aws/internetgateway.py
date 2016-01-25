@@ -60,7 +60,7 @@ def tag(profile, internet_gateway, key, value):
             A profile to connect to AWS with.
 
         internet_gateway
-            The ID of the internet_gateway you want to tag.
+            The ID of the internet gateway you want to tag.
 
         key
             The key/name of the tag.
