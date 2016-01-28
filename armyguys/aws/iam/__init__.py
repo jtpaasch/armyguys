@@ -6,3 +6,4 @@ from . import account
 from . import instanceprofile
 from . import role
 from . import policy
+from . import servercertificate
