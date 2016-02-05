@@ -121,7 +121,8 @@ def add_inbound_rule(profile,
                      protocol,
                      from_port,
                      to_port,
-                     cidr_block):
+                     cidr_block=None,
+                     source_security_group=None):
     """Create a rule for inbound traffic in a security group.
 
     Args:
@@ -145,6 +146,9 @@ def add_inbound_rule(profile,
         cidr_block
             The IP range (as a CIDR block) to accept connections from.
 
+        source_security_group
+            The ID of a source security group (instead of a CIDR block).
+
     Returns:
         The JSON response returned by boto3.
 
@@ -152,12 +156,16 @@ def add_inbound_rule(profile,
     client = boto3client.get("ec2", profile)
     params = {}
     params["GroupId"] = security_group
-    params["IpPermissions"] = [{
+    rule = {
         "IpProtocol": protocol,
         "FromPort": from_port,
         "ToPort": to_port,
-        "IpRanges": [{"CidrIp": cidr_block}],
-        }]
+        }
+    if cidr_block:
+        rule["IpRanges"] = [{"CidrIp": cidr_block}]
+    if source_security_group:
+        rule["UserIdGroupPairs"] = [{"GroupId": source_security_group}]
+    params["IpPermissions"] = [rule]
     return client.authorize_security_group_ingress(**params)
 
 
@@ -166,7 +174,8 @@ def remove_inbound_rule(profile,
                         protocol,
                         from_port,
                         to_port,
-                        cidr_block):
+                        cidr_block=None,
+                        source_security_group=None):
     """Delete a rule for inbound traffic in a security group.
 
     Args:
@@ -189,6 +198,9 @@ def remove_inbound_rule(profile,
         cidr_block
             The IP range (as a CIDR block) the rule allows connections from.
 
+        source_security_group
+            The ID of a source security group (instead of a CIDR block).
+
     Returns:
         The JSON response returned by boto3.
 
@@ -196,12 +208,16 @@ def remove_inbound_rule(profile,
     client = boto3client.get("ec2", profile)
     params = {}
     params["GroupId"] = security_group
-    params["IpPermissions"] = [{
+    rule = {
         "IpProtocol": protocol,
         "FromPort": from_port,
         "ToPort": to_port,
-        "IpRanges": [{"CidrIp": cidr_block}],
-        }]
+        }
+    if cidr_block:
+        rule["IpRanges"] = [{"CidrIp": cidr_block}]
+    if source_security_group:
+        rule["UserIdGroupPairs"] = [{"GroupId": source_security_group}]
+    params["IpPermissions"] = [rule]
     return client.revoke_security_group_ingress(**params)
 
 
@@ -210,7 +226,8 @@ def add_outbound_rule(profile,
                       protocol,
                       from_port,
                       to_port,
-                      cidr_block):
+                      cidr_block=None,
+                      source_security_group=None):
     """Create a rule for outbound traffic in a security group.
 
     Args:
@@ -234,6 +251,9 @@ def add_outbound_rule(profile,
         cidr_block
             The IP range (as a CIDR block) to allow connections to.
 
+        source_security_group
+            The ID of a source security group (instead of a CIDR block).
+
     Returns:
         The JSON response returned by boto3.
 
@@ -241,12 +261,16 @@ def add_outbound_rule(profile,
     client = boto3client.get("ec2", profile)
     params = {}
     params["GroupId"] = security_group
-    params["IpPermissions"] = [{
+    rule = {
         "IpProtocol": protocol,
         "FromPort": from_port,
         "ToPort": to_port,
-        "IpRanges": [{"CidrIp": cidr_block}],
-        }]
+        }
+    if cidr_block:
+        rule["IpRanges"] = [{"CidrIp": cidr_block}]
+    if source_security_group:
+        rule["UserIdGroupPairs"] = [{"GroupId": source_security_group}]
+    params["IpPermissions"] = [rule]
     return client.authorize_security_group_egress(**params)
 
 
@@ -255,7 +279,8 @@ def remove_outbound_rule(profile,
                          protocol,
                          from_port,
                          to_port,
-                         cidr_block):
+                         cidr_block=None,
+                         source_security_group=None):
     """Delete a rule for outbound traffic in a security group.
 
     Args:
@@ -278,6 +303,9 @@ def remove_outbound_rule(profile,
         cidr_block
             The IP range (as a CIDR block) the rule allows connections to.
 
+        source_security_group
+            The ID of a source security group (instead of a CIDR block).
+
     Returns:
         The JSON response returned by boto3.
 
@@ -285,11 +313,15 @@ def remove_outbound_rule(profile,
     client = boto3client.get("ec2", profile)
     params = {}
     params["GroupId"] = security_group
-    params["IpPermissions"] = [{
+    rule = {
         "IpProtocol": protocol,
         "FromPort": from_port,
         "ToPort": to_port,
-        "IpRanges": [{"CidrIp": cidr_block}],
-        }]
+        }
+    if cidr_block:
+        rule["IpRanges"] = [{"CidrIp": cidr_block}]
+    if source_security_group:
+        rule["UserIdGroupPairs"] = [{"GroupId": source_security_group}]
+    params["IpPermissions"] = [rule]
     return client.revoke_security_group_egress(**params)
 
