@@ -24,13 +24,14 @@ from . import securitygroups as sg_jobs
 
 
 AMI_MAP = {
-    "us-east-1": "ami-ddc7b6b7",
-    "us-west-1": "ami-a39df1c3",
-    "us-west-2": "ami-d74357b6",
-    "eu-west-1": "ami-f1b46b82",
-    "ap-northeast-1": "ami-3077525e",
-    "ap-southeast-1": "ami-21ae6942",
-    "ap-southeast-2": "ami-23b4eb40",
+    "us-east-1": "ami-43043329",
+    "us-west-1": "ami-a77b0ac7",
+    "us-west-2": "ami-02a24162",
+    "eu-west-1": "ami-76e95b05",
+    "eu-central-1": "ami-96b6adfa",
+    "ap-northeast-1": "ami-18d8de76",
+    "ap-southeast-1": "ami-9f60aefc",
+    "ap-southeast-2": "ami-75a38416",
 }
 
 
