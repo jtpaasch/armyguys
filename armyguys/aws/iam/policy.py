@@ -27,7 +27,7 @@ def create(profile, name, contents=None, filepath=None):
             You must specify this OR a filepath.
 
     Returns:
-        The JSON response returned by boto3.
+        The response returned by boto3.
 
     """
     if filepath:
@@ -71,8 +71,30 @@ def get(profile):
             A profile to connect to AWS with.
 
     Returns:
-        The JSON response returned by boto3.
+        The response returned by boto3.
 
     """
     client = boto3client.get("iam", profile)
     return client.list_policies()
+
+
+def details(profile, policy):
+    """Get one IAM policy.
+
+    Args:
+
+        profile
+            A profile to connect to AWS with.
+
+        policy
+            The ARN of the policy you want to fetch.
+
+    Returns:
+        The response returned by boto3.
+
+    """
+    client = boto3client.get("iam", profile)
+    params = {}
+    params["PolicyArn"] = policy
+    return client.get_policy(**params)
+

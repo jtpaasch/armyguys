@@ -78,6 +78,27 @@ def get(profile):
     return client.list_roles()
 
 
+def details(profile, role):
+    """Get one IAM role.
+
+    Args:
+
+        profile
+            A profile to connect to AWS with.
+
+        role
+            The role you want to fetch.
+
+    Returns:
+        The JSON response returned by boto3.
+
+    """
+    client = boto3client.get("iam", profile)
+    params = {}
+    params["RoleName"] = role
+    return client.get_role(**params)
+
+
 def attach_policy(profile, role, policy):
     """Attach a policy to an IAM role.
 
@@ -120,3 +141,25 @@ def detach_policy(profile, role, policy):
     params["RoleName"] = role
     params["PolicyArn"] = policy
     return client.detach_role_policy(**params)
+
+
+def get_attached_policies(profile, role):
+    """Get a list of all IAM roles.
+
+    Args:
+
+        profile
+            A profile to connect to AWS with.
+
+        role
+            The role you want to get policies for.
+
+    Returns:
+        The response returned by boto3.
+
+    """
+    client = boto3client.get("iam", profile)
+    params = {}
+    params["RoleName"] = role
+    return client.list_attached_role_policies(**params)
+                                                                   

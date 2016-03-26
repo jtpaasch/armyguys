@@ -60,6 +60,27 @@ def get(profile):
     return client.list_instance_profiles()
 
 
+def details(profile, instance_profile):
+    """Get one IAM instance profile.
+
+    Args:
+    
+        profile
+            A profile to connect to AWS with.
+
+        instance_profile
+            The name of the instance profile you want to fetch.
+
+    Returns:
+        The response returned by boto3.
+
+    """
+    client = boto3client.get("iam", profile)
+    params = {}
+    params["InstanceProfileName"] = instance_profile
+    return client.get_instance_profile(**params)
+
+
 def add_role(profile, instance_profile, role):
     """Add a role to an instance profile.
 
