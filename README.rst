@@ -13,9 +13,9 @@ Pip install from the repo (preferably in a virtual environment)::
 
     pip install git+https://github.com/jtpaasch/armyguys.git#egg=armyguys
 
-Then checkout the help::
+Then checkout the help. Just type ``armyguys`` on the command line for that::
 
-    armyguys --help
+    armyguys
 
 
 Make Sure You Can Connect to AWS
