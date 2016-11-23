@@ -15,7 +15,7 @@ Pip install from the repo (preferably in a virtual environment)::
 
 Then checkout the help::
 
-    armyguys
+    armyguys --help
 
 
 Make Sure You Can Connect to AWS
@@ -39,7 +39,7 @@ ECS clusters are managed with the ``armyguys clusters`` command::
 
 To see all your clusters, use ``list``::
 
-    armyugys clusters list
+    armyguys clusters list
 
 To create a cluster named "my-app-cluster", use ``create my-app-cluster``::
 
